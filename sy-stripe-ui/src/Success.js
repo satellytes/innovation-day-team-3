@@ -41,6 +41,10 @@ function Success() {
         window.location.href = '/';
     };
 
+    const handleViewSuccess = () => {
+        window.location.href = '/success';
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-4xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
@@ -201,6 +205,12 @@ function Success() {
                                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                             >
                                 Zurück zur Startseite
+                            </button>
+                            <button
+                                onClick={handleViewSuccess}
+                                className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                            >
+                                Success-Seite ansehen
                             </button>
                             <button
                                 onClick={() => window.print()}
