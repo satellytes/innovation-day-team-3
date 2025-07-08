@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"sy-stripe-service/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v72"
@@ -71,17 +74,35 @@ type CreateSubscriptionRequest struct {
 	PriceID    string `json:"price_id" binding:"required"`
 }
 
-// NewStripeHandlers creates a new instance of StripeHandlers.
-func NewStripeHandlers(stripeService StripeService) *StripeHandlers {
-	return &StripeHandlers{stripeService: stripeService}
-}
 
-// StripeHandlers holds the Stripe service dependency.
+
+// StripeHandlers holds the service dependencies.
 type StripeHandlers struct {
-	stripeService StripeService
+	stripeService       StripeService
+	userService         UserService
+	subscriptionService SubscriptionService
 }
 
-// CreateCustomerHandler handles the creation of a new Stripe customer.
+// UserService defines the interface for user operations.
+type UserService interface {
+	CreateUser(ctx context.Context, email string, stripeCustomerID string) (*models.User, error)
+}
+
+// SubscriptionService defines the interface for subscription operations.
+type SubscriptionService interface {
+	CreateSubscription(ctx context.Context, userID string, priceID string) (*models.Subscription, error)
+}
+
+// NewStripeHandlers creates a new instance of StripeHandlers.
+func NewStripeHandlers(stripeService StripeService, userService UserService, subscriptionService SubscriptionService) *StripeHandlers {
+	return &StripeHandlers{
+		stripeService:       stripeService,
+		userService:         userService,
+		subscriptionService:  subscriptionService,
+	}
+}
+
+// CreateCustomerHandler handles the creation of a new Stripe customer AND persists to the DB.
 func (h *StripeHandlers) CreateCustomerHandler(c *gin.Context) {
 	var req CreateCustomerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -89,16 +110,24 @@ func (h *StripeHandlers) CreateCustomerHandler(c *gin.Context) {
 		return
 	}
 
+	// 1. Create customer in Stripe
 	customer, err := h.stripeService.CreateCustomer(req.Email, req.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create customer: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create Stripe customer: %v", err)})
 		return
 	}
 
-	c.JSON(http.StatusOK, customer)
+	// 2. Persist user in DB
+	user, err := h.userService.CreateUser(c.Request.Context(), req.Email, customer.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to persist user: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"stripe_customer": customer, "user": user})
 }
 
-// CreateSubscriptionHandler handles the creation of a new Stripe subscription.
+// CreateSubscriptionHandler handles the creation of a new Stripe subscription AND persists to the DB.
 func (h *StripeHandlers) CreateSubscriptionHandler(c *gin.Context) {
 	var req CreateSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -106,13 +135,21 @@ func (h *StripeHandlers) CreateSubscriptionHandler(c *gin.Context) {
 		return
 	}
 
+	// 1. Create subscription in Stripe
 	subscription, err := h.stripeService.CreateSubscription(req.CustomerID, req.PriceID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create subscription: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create Stripe subscription: %v", err)})
 		return
 	}
 
-	c.JSON(http.StatusOK, subscription)
+	// 2. Persist subscription in DB
+	sub, err := h.subscriptionService.CreateSubscription(c.Request.Context(), req.CustomerID, req.PriceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to persist subscription: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"stripe_subscription": subscription, "subscription": sub})
 }
 
 // GetProductsHandler handles retrieving a list of Stripe products.

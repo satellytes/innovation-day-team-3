@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
@@ -37,7 +37,7 @@ func NewDB(databaseURL string) (*DB, error) {
 			return nil, fmt.Errorf("unable to parse database URL: %w", err)
 		}
 
-		pool, err := pgxpool.ConnectConfig(ctx, config)
+		pool, err := pgxpool.NewWithConfig(ctx, config)
 		if err != nil {
 			return nil, fmt.Errorf("unable to connect to PostgreSQL database: %w", err)
 		}

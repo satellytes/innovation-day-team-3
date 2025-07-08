@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v72"
 	"sy-stripe-service/internal/app/handlers"
+	"sy-stripe-service/internal/app/services"
 	"sy-stripe-service/internal/config"
 	"sy-stripe-service/internal/database"
 )
@@ -49,9 +50,20 @@ func main() {
 	healthHandler := handlers.NewHealthHandler()
 	r.GET("/health", healthHandler.HealthCheckHandler)
 
-	// Register Stripe API routes
+	// Initialize repositories and services
+	var userRepo interface{}
+	var subRepo interface{}
+	if db.Postgres != nil {
+		userRepo = database.NewPostgresUserRepository(db.Postgres)
+		subRepo = database.NewPostgresSubscriptionRepository(db.Postgres)
+	} else {
+		userRepo = database.NewInMemoryUserRepository()
+		subRepo = database.NewInMemorySubscriptionRepository()
+	}
+	userService := services.NewUserService(userRepo.(database.UserRepository))
+	subService := services.NewSubscriptionService(subRepo.(database.SubscriptionRepository))
 	stripeService := handlers.NewStripeService()
-	stripeHandlers := handlers.NewStripeHandlers(stripeService)
+	stripeHandlers := handlers.NewStripeHandlers(stripeService, userService, subService)
 
 	v1 := r.Group("/api/v1")
 	{
