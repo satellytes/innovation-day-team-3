@@ -1,0 +1,24 @@
+### GET Stripe products
+#@no-log
+GET http://localhost:8080/api/v1/products
+
+### POST Create customer
+POST http://localhost:8080/api/v1/customers/create
+Content-Type: application/json
+
+{
+  "email": "arthur.erdoes+stripe@satellytes.com",
+  "name": "John Doe"
+}
+
+
+### POST Create checkout session
+#@no-log
+POST http://localhost:8080/api/v1/checkout-session
+Content-Type: application/json
+
+{
+  "priceId": "price_1RiDm0RRmxrys5swnktNwKq9",
+  "userId": "e88a3811-bd27-4385-a30f-4bd46aa22241"
+}
+

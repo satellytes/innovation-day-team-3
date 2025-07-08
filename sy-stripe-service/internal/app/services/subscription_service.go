@@ -12,12 +12,12 @@ import (
 
 
 type SubscriptionService struct {
-	Repo database.SubscriptionRepository
-	// StripeClient placeholder (add actual client when integrating Stripe)
+	UserRepo database.UserRepository
+	SubRepo  database.SubscriptionRepository
 }
 
-func NewSubscriptionService(repo database.SubscriptionRepository) *SubscriptionService {
-	return &SubscriptionService{Repo: repo}
+func NewSubscriptionService(userRepo database.UserRepository, subRepo database.SubscriptionRepository) *SubscriptionService {
+	return &SubscriptionService{UserRepo: userRepo, SubRepo: subRepo}
 }
 
 func (s *SubscriptionService) CreateSubscription(ctx context.Context, userID string, priceID string) (*models.Subscription, error) {
@@ -34,7 +34,7 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, userID str
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	return s.Repo.CreateSubscription(ctx, sub)
+	return s.SubRepo.CreateSubscription(ctx, sub)
 }
 
 func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscriptionID string) error {
@@ -44,11 +44,11 @@ func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscripti
 
 func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, stripeSubscriptionID string, status string, currentPeriodEnd time.Time, cancelAtPeriodEnd bool) error {
 	// Placeholder: Update status in DB and (later) Stripe
-	return s.Repo.UpdateSubscriptionStatus(ctx, stripeSubscriptionID, status)
+	return s.SubRepo.UpdateSubscriptionStatus(ctx, stripeSubscriptionID, status)
 }
 
 func (s *SubscriptionService) UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error) {
-	return s.Repo.UpdateSubscription(ctx, sub)
+	return s.SubRepo.UpdateSubscription(ctx, sub)
 }
 
 // CreateCheckoutSession creates a Stripe Checkout Session for a subscription.
@@ -67,7 +67,7 @@ func (s *SubscriptionService) CreateCheckoutSession(priceID string, userID *uuid
 
 	// Add user/customer if userID provided
 	if userID != nil {
-		user, err := s.Repo.(database.UserRepository).GetUserByStripeCustomerID(context.Background(), userID.String())
+		user, err := s.UserRepo.GetUserByStripeCustomerID(context.Background(), userID.String())
 		if err == nil && user.StripeCustomerID != "" {
 			params.Customer = stripe.String(user.StripeCustomerID)
 		}

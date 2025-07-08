@@ -43,6 +43,11 @@ func (h *CheckoutHandler) CreateCheckoutSessionHandler(c *gin.Context) {
 		userIDPtr = &uid
 	}
 
+	if h.SuccessURL == "" || h.CancelURL == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "success_url and cancel_url must be configured"})
+		return
+	}
+
 	session, err := h.Service.CreateCheckoutSession(req.PriceID, userIDPtr, h.SuccessURL, h.CancelURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

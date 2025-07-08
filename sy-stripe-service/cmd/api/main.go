@@ -75,7 +75,7 @@ func main() {
 		subRepo = database.NewInMemorySubscriptionRepository()
 	}
 	userService := services.NewUserService(userRepo.(database.UserRepository))
-	subService := services.NewSubscriptionService(subRepo.(database.SubscriptionRepository))
+	subService := services.NewSubscriptionService(userRepo.(database.UserRepository), subRepo.(database.SubscriptionRepository))
 	stripeService := handlers.NewStripeService()
 	stripeHandlers := handlers.NewStripeHandlers(stripeService, userService, subService)
 
