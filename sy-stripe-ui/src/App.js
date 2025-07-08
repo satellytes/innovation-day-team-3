@@ -52,6 +52,66 @@ const apiClient = {
             console.error('Fehler beim Laden der Produkte:', error);
             throw error;
         }
+    },
+
+    /**
+     * Erstellt einen neuen Kunden in Stripe
+     * @param {string} email - E-Mail-Adresse des Kunden
+     * @param {string} name - Name des Kunden
+     * @returns {Promise<Object>} - Kundendaten mit user.id
+     */
+    async createCustomer(email, name) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/customers/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    name: name
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Fehler beim Erstellen des Kunden:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Erstellt eine Checkout-Session für das Abonnement
+     * @param {string} priceId - Stripe Price ID
+     * @param {string} userId - User ID vom erstellten Kunden
+     * @returns {Promise<Object>} - Session-Daten mit sessionUrl
+     */
+    async createCheckoutSession(priceId, userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/checkout-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    priceId: priceId,
+                    userId: userId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Fehler beim Erstellen der Checkout-Session:', error);
+            throw error;
+        }
     }
 };
 
@@ -213,27 +273,53 @@ function App() {
     };
 
     /**
-     * Simuliert eine Stripe-Zahlung mit Backend-API-Aufruf
-     * In der Produktion würde dies einen echten API-Aufruf an das Backend machen
+     * Startet den Stripe Checkout-Prozess
      * @param {string} planId - ID des zu kaufenden Plans
-     * @returns {Promise} - Promise mit Zahlungsergebnis
+     * @returns {Promise} - Promise mit Checkout-Ergebnis
      */
     const initiateStripePayment = async (planId) => {
         setPaymentStatus('loading');
         
-        // Simuliere API-Aufruf mit 2 Sekunden Verzögerung
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // Simuliere 20% Fehlerrate für realistische Testbedingungen
-                if (Math.random() < 0.2) {
-                    setPaymentStatus('error');
-                    reject(new Error('Zahlung fehlgeschlagen'));
-                } else {
-                    setPaymentStatus('success');
-                    resolve({ success: true, planId });
-                }
-            }, 2000);
-        });
+        try {
+            // Finde den ausgewählten Plan
+            const selectedPlan = subscriptionPlans.find(plan => plan.id === planId);
+            if (!selectedPlan) {
+                throw new Error('Plan nicht gefunden');
+            }
+
+            // Bestimme die richtige Price ID basierend auf dem Zahlungsintervall
+            const priceId = isMonthly ? selectedPlan.monthlyPriceId : selectedPlan.yearlyPriceId;
+            if (!priceId) {
+                throw new Error('Preis-ID nicht verfügbar');
+            }
+
+            // Schritt 1: Erstelle Kunden
+            // Für Demo-Zwecke verwenden wir Dummy-Daten
+            // In einer echten App würden Sie diese Daten vom User abfragen
+            const customerData = await apiClient.createCustomer(
+                'demo@example.com', // In echter App: User-Input
+                'Demo User'         // In echter App: User-Input
+            );
+
+            // Schritt 2: Erstelle Checkout-Session
+            const checkoutData = await apiClient.createCheckoutSession(
+                priceId,
+                customerData.id
+            );
+
+            // Schritt 3: Weiterleitung zu Stripe Checkout
+            if (checkoutData.sessionUrl) {
+                // Leite zur Stripe Checkout-Seite weiter
+                window.location.href = checkoutData.sessionUrl;
+            } else {
+                throw new Error('Keine Session-URL erhalten');
+            }
+
+        } catch (error) {
+            console.error('Checkout-Fehler:', error);
+            setPaymentStatus('error');
+            throw error;
+        }
     };
 
     /**
@@ -349,10 +435,10 @@ function App() {
                             <>
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                                    Zahlung wird verarbeitet...
+                                    Checkout wird vorbereitet...
                                 </h3>
                                 <p className="text-gray-600 text-sm sm:text-base">
-                                    Bitte warten Sie, während wir Ihre Zahlung bearbeiten.
+                                    Sie werden gleich zur Stripe Checkout-Seite weitergeleitet.
                                 </p>
                             </>
                         )}
