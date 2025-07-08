@@ -57,6 +57,17 @@ type InMemorySubscriptionRepository struct {
 	subscriptions  map[string]*models.Subscription // key: StripeSubscriptionID
 }
 
+func (r *InMemorySubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, sub := range r.subscriptions {
+		if sub.ID.String() == id {
+			return sub, nil
+		}
+	}
+	return nil, fmt.Errorf("subscription not found")
+}
+
 func NewInMemorySubscriptionRepository() *InMemorySubscriptionRepository {
 	return &InMemorySubscriptionRepository{
 		subscriptions: make(map[string]*models.Subscription),

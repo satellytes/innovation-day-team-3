@@ -38,13 +38,19 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, userID str
 }
 
 func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscriptionID string) error {
-	// Placeholder: Implement Stripe cancellation logic later
-	return nil
+	// TODO: Call Stripe API to cancel subscription (MVP: skip or mock)
+	// Update status in our database
+	return s.SubRepo.UpdateSubscriptionStatus(ctx, subscriptionID, "canceled")
 }
 
 func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, stripeSubscriptionID string, status string, currentPeriodEnd time.Time, cancelAtPeriodEnd bool) error {
 	// Placeholder: Update status in DB and (later) Stripe
 	return s.SubRepo.UpdateSubscriptionStatus(ctx, stripeSubscriptionID, status)
+}
+
+// GetSubscriptionByID retrieves a subscription by its internal UUID
+func (s *SubscriptionService) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
+	return s.SubRepo.GetSubscriptionByID(ctx, id)
 }
 
 func (s *SubscriptionService) UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error) {

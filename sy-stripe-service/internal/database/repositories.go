@@ -20,6 +20,7 @@ type UserRepository interface {
 type SubscriptionRepository interface {
 	CreateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error)
 	GetSubscriptionByStripeSubscriptionID(ctx context.Context, subID string) (*models.Subscription, error)
+	GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error)
 	UpdateSubscriptionStatus(ctx context.Context, subID string, status string) error
 	UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error)
 }
@@ -76,6 +77,17 @@ func (r *PostgresUserRepository) GetUserByStripeCustomerID(ctx context.Context, 
 // PostgresSubscriptionRepository implements SubscriptionRepository.
 type PostgresSubscriptionRepository struct {
 	pool *pgxpool.Pool
+}
+
+func (r *PostgresSubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
+	query := `SELECT id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, current_period_end, created_at, updated_at FROM subscriptions WHERE id = $1`
+	row := r.pool.QueryRow(ctx, query, id)
+	var s models.Subscription
+	err := row.Scan(&s.ID, &s.UserID, &s.StripeSubscriptionID, &s.StripePriceID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("subscription not found: %w", err)
+	}
+	return &s, nil
 }
 
 func NewPostgresSubscriptionRepository(pool *pgxpool.Pool) *PostgresSubscriptionRepository {
