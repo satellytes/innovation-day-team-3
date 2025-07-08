@@ -105,33 +105,79 @@ func (db *DB) GetPgxPool() *pgxpool.Pool {
 	return db.Postgres
 }
 
-// ApplyMigrations applies SQL migrations from a directory to the SQLite database.
-func ApplyMigrations(sqliteDB *sql.DB, migrationsDir string) error {
-	if sqliteDB == nil {
-		return fmt.Errorf("SQLite database connection is nil")
+// ApplyMigrations applies SQL migrations from a directory to the connected database (SQLite or Postgres).
+func ApplyMigrations(db *sql.DB, migrationsDir string) error {
+	if db == nil {
+		return fmt.Errorf("database connection is nil")
 	}
 
-	// Read migration files from the directory
-	files, err := filepath.Glob(filepath.Join(migrationsDir, "*.sql"))
+	driverName := "unknown"
+	if db != nil {
+		// Try to detect driver from db object
+		// Unfortunately, sql.DB does not expose the driver name directly
+		// so we rely on the DSN sniffing via the connection string
+		// or fallback to running a version query
+		// This is a best-effort approach
+		// If you ever pass a custom driver, update this logic accordingly
+		// For now, default to Postgres if it can execute 'SELECT version()'
+		row := db.QueryRow("SELECT version()")
+		var version string
+		if err := row.Scan(&version); err == nil && strings.Contains(strings.ToLower(version), "postgres") {
+			driverName = "postgres"
+		} else {
+			// Try SQLite version
+			row := db.QueryRow("SELECT sqlite_version()")
+			var sqliteVersion string
+			if err := row.Scan(&sqliteVersion); err == nil {
+				driverName = "sqlite3"
+			}
+		}
+	}
+	log.Printf("ApplyMigrations detected driver: %s", driverName)
+
+	var pattern string
+	switch driverName {
+	case "sqlite3":
+		pattern = "*.sqlite.sql"
+	case "postgres":
+		pattern = "*.postgres.sql"
+	default:
+		pattern = "*.sql"
+	}
+
+	files, err := filepath.Glob(filepath.Join(migrationsDir, pattern))
 	if err != nil {
+		log.Printf("Migration file glob error: %v", err)
 		return fmt.Errorf("failed to read migration files: %w", err)
 	}
 
-	// Sort files to ensure they are applied in order
+	// Fallback: If no driver-specific files, try generic *.sql
+	if len(files) == 0 {
+		log.Printf("No %s files found, falling back to *.sql", pattern)
+		files, err = filepath.Glob(filepath.Join(migrationsDir, "*.sql"))
+		if err != nil {
+			log.Printf("Migration file glob error: %v", err)
+			return fmt.Errorf("failed to read migration files: %w", err)
+		}
+	}
+
 	sort.Strings(files)
+
+	if len(files) == 0 {
+		log.Printf("No migration files found for driver: %s", driverName)
+		return nil
+	}
 
 	for _, file := range files {
 		log.Printf("Applying migration: %s", file)
-		
-		// Read the SQL file
 		content, err := os.ReadFile(file)
 		if err != nil {
+			log.Printf("Migration read error: %v", err)
 			return fmt.Errorf("failed to read migration file %s: %w", file, err)
 		}
-
-		// Execute the SQL
-		_, err = sqliteDB.Exec(string(content))
+		_, err = db.Exec(string(content))
 		if err != nil {
+			log.Printf("Migration exec error: %v", err)
 			return fmt.Errorf("failed to execute migration %s: %w", file, err)
 		}
 	}

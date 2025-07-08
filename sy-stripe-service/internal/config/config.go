@@ -9,11 +9,12 @@ import (
 
 // Config holds the application configuration
 type Config struct {
-	ServerPort      string
-	DatabaseURL     string
-	StripeSecretKey string
-	AppSuccessURL   string
-	AppCancelURL    string
+	ServerPort         string
+	DatabaseURL        string
+	StripeSecretKey    string
+	StripeWebhookSecret string
+	AppSuccessURL      string
+	AppCancelURL       string
 }
 
 // LoadConfig loads configuration from environment variables or .env file
@@ -24,11 +25,12 @@ func LoadConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		ServerPort:      getEnv("SERVER_PORT", "8080"),
-		DatabaseURL:     os.Getenv("DATABASE_URL"),
-		StripeSecretKey: os.Getenv("STRIPE_SECRET_KEY"),
-		AppSuccessURL:   os.Getenv("APP_SUCCESS_URL"),
-		AppCancelURL:    os.Getenv("APP_CANCEL_URL"),
+		ServerPort:           getEnv("SERVER_PORT", "8080"),
+		DatabaseURL:          os.Getenv("DATABASE_URL"),
+		StripeSecretKey:      os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret:  os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		AppSuccessURL:        os.Getenv("APP_SUCCESS_URL"),
+		AppCancelURL:         os.Getenv("APP_CANCEL_URL"),
 	}
 
 	// Basic validation
@@ -37,6 +39,9 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.StripeSecretKey == "" {
 		return nil, fmt.Errorf("STRIPE_SECRET_KEY not set in environment")
+	}
+	if cfg.StripeWebhookSecret == "" {
+		return nil, fmt.Errorf("STRIPE_WEBHOOK_SECRET not set in environment")
 	}
 
 	return cfg, nil

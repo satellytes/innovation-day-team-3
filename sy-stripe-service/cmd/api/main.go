@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	_ "github.com/lib/pq"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,6 +38,19 @@ func main() {
 	// Apply migrations for SQLite file-based and in-memory databases
 	if strings.HasPrefix(cfg.DatabaseURL, "file:") || strings.HasPrefix(cfg.DatabaseURL, "./") || cfg.DatabaseURL == ":memory:" {
 		err = database.ApplyMigrations(db.SQLite, "./migrations")
+		if err != nil {
+			log.Fatalf("Failed to apply migrations: %v", err)
+		}
+	}
+	// Apply migrations for Postgres
+	if db.Postgres != nil {
+		// Open *sql.DB for migrations
+		sqlDB, err := sql.Open("postgres", cfg.DatabaseURL)
+		if err != nil {
+			log.Fatalf("Failed to open sql.DB for migrations: %v", err)
+		}
+		defer sqlDB.Close()
+		err = database.ApplyMigrations(sqlDB, "./migrations")
 		if err != nil {
 			log.Fatalf("Failed to apply migrations: %v", err)
 		}

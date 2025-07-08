@@ -14,6 +14,7 @@ type User struct {
 	ID             uuid.UUID `json:"id" db:"id"`
 	StripeCustomerID string    `json:"stripe_customer_id" db:"stripe_customer_id"`
 	Email          string    `json:"email" db:"email"`
+	Name           string    `json:"name" db:"name"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }

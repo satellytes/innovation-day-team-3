@@ -1,7 +1,6 @@
 package services
 
 import (
-	"os"
 	"sy-stripe-service/internal/models"
 
 	"github.com/stripe/stripe-go/v72"
@@ -12,8 +11,7 @@ import (
 type ProductService struct{}
 
 func NewProductService() *ProductService {
-	// Ensure Stripe API key is set
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	// Stripe key must be set by main.go via config before using ProductService
 	return &ProductService{}
 }
 

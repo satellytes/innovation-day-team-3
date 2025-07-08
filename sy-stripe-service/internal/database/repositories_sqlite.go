@@ -32,7 +32,7 @@ type SQLiteUserRepository struct {
 }
 
 func (r *SQLiteUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE id = ?`
+	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE id = ?`
 	row := r.db.QueryRowContext(ctx, query, id)
 	var u models.User
 	var createdAtStr, updatedAtStr string
@@ -65,7 +65,7 @@ func (r *SQLiteUserRepository) CreateUser(ctx context.Context, user *models.User
 }
 
 func (r *SQLiteUserRepository) GetUserByStripeCustomerID(ctx context.Context, customerID string) (*models.User, error) {
-	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE stripe_customer_id = ?`
+	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE stripe_customer_id = ?`
 	row := r.db.QueryRowContext(ctx, query, customerID)
 	var u models.User
 	var createdAtStr, updatedAtStr string
@@ -85,7 +85,7 @@ func (r *SQLiteUserRepository) GetUserByStripeCustomerID(ctx context.Context, cu
 }
 
 func (r *SQLiteUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users`)
+	rows, err := r.db.QueryContext(ctx, `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users`)
 	if err != nil {
 		return nil, err
 	}

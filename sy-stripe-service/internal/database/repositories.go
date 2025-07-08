@@ -27,7 +27,7 @@ type SubscriptionRepository interface {
 }
 
 func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
-	rows, err := r.pool.Query(ctx, `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users`)
+	rows, err := r.pool.Query(ctx, `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users`)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ type PostgresUserRepository struct {
 }
 
 func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE id = $1`
 	row := r.pool.QueryRow(ctx, query, id)
 	var u models.User
 	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
@@ -76,7 +76,7 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *models.Us
 }
 
 func (r *PostgresUserRepository) GetUserByStripeCustomerID(ctx context.Context, customerID string) (*models.User, error) {
-	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE stripe_customer_id = $1`
+	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE stripe_customer_id = $1`
 	row := r.pool.QueryRow(ctx, query, customerID)
 	var u models.User
 	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
