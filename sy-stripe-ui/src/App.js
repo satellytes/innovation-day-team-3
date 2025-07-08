@@ -1,66 +1,69 @@
 import React from 'react';
 import logo from './logo.png';
 
+// API-Konfiguration
+const API_BASE_URL = 'http://localhost:8080/api/v1';
+
 /**
- * Mock-Daten für Abonnementpläne
- * In einer Produktionsumgebung würden diese Daten von einem Backend/API stammen
+ * API-Client für Backend-Kommunikation
  */
-const subscriptionPlans = [
-    {
-        id: 'basic',
-        name: 'Basic Plan',
-        monthlyPrice: 9.99,
-        yearlyPrice: 99.99,
-        yearlyDiscountPercentage: 16,
-        features: [
-            'Bis zu 5 Projekte',
-            '10 GB Speicherplatz',
-            'E-Mail Support',
-            'Grundlegende Analytics'
-        ]
-    },
-    {
-        id: 'standard',
-        name: 'Standard Plan',
-        monthlyPrice: 19.99,
-        yearlyPrice: 199.99,
-        yearlyDiscountPercentage: 16,
-        features: [
-            'Bis zu 25 Projekte',
-            '100 GB Speicherplatz',
-            'Prioritäts-Support',
-            'Erweiterte Analytics',
-            'Team-Kollaboration',
-            'API-Zugang'
-        ]
-    },
-    {
-        id: 'premium',
-        name: 'Premium Plan',
-        monthlyPrice: 39.99,
-        yearlyPrice: 399.99,
-        yearlyDiscountPercentage: 16,
-        features: [
-            'Unbegrenzte Projekte',
-            '1 TB Speicherplatz',
-            '24/7 Premium Support',
-            'Vollständige Analytics Suite',
-            'Erweiterte Team-Features',
-            'White-Label Optionen',
-            'Custom Integrationen',
-            'Dedicated Account Manager'
-        ]
+const apiClient = {
+    /**
+     * Lädt Produktdaten vom Backend
+     * @returns {Promise<Array>} - Array von Produkten mit Preisen
+     */
+    async getProducts() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/products`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const products = await response.json();
+            
+            // Transformiere Backend-Daten in Frontend-Format
+            return products.map(product => {
+                // Finde monatliche und jährliche Preise
+                const monthlyPrice = product.prices.find(p => p.interval === 'month');
+                const yearlyPrice = product.prices.find(p => p.interval === 'year');
+                
+                // Berechne Rabatt für jährliche Zahlung
+                const yearlyDiscountPercentage = monthlyPrice && yearlyPrice 
+                    ? Math.round((1 - (yearlyPrice.unit_amount / 100) / (monthlyPrice.unit_amount / 100 * 12)) * 100)
+                    : 0;
+                
+                return {
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    monthlyPrice: monthlyPrice ? monthlyPrice.unit_amount / 100 : 0,
+                    yearlyPrice: yearlyPrice ? yearlyPrice.unit_amount / 100 : 0,
+                    yearlyDiscountPercentage,
+                    monthlyPriceId: monthlyPrice?.id,
+                    yearlyPriceId: yearlyPrice?.id,
+                    features: [
+                        // Fallback-Features, da Stripe keine Feature-Liste hat
+                        'Alle Grundfunktionen',
+                        'E-Mail Support',
+                        'Monatliche Updates'
+                    ]
+                };
+            });
+        } catch (error) {
+            console.error('Fehler beim Laden der Produkte:', error);
+            throw error;
+        }
     }
-];
+};
 
 /**
  * PaymentToggle Komponente - Ermöglicht das Umschalten zwischen monatlicher und jährlicher Zahlung
  * @param {boolean} isMonthly - Aktueller Zustand (true = monatlich, false = jährlich)
  * @param {function} onToggle - Callback-Funktion beim Umschalten
+ * @param {Array} plans - Verfügbare Pläne für Rabattberechnung
  */
-function PaymentToggle({ isMonthly, onToggle }) {
-    // Dynamischer Rabattpercentage aus den Plandaten
-    const discountPercentage = subscriptionPlans[0].yearlyDiscountPercentage;
+function PaymentToggle({ isMonthly, onToggle, plans = [] }) {
+    // Dynamischer Rabattpercentage aus den Plandaten (nimm den ersten verfügbaren)
+    const discountPercentage = plans.length > 0 ? plans[0].yearlyDiscountPercentage : 16;
 
     return (
         <div className="flex justify-center mb-8 px-4">
@@ -171,6 +174,30 @@ function App() {
     const [isMonthly, setIsMonthly] = React.useState(true); // Zahlungsintervall (monatlich/jährlich)
     const [selectedPlanId, setSelectedPlanId] = React.useState(null); // ID des ausgewählten Plans
     const [paymentStatus, setPaymentStatus] = React.useState('idle'); // Status der Zahlung (idle/loading/success/error)
+    const [subscriptionPlans, setSubscriptionPlans] = React.useState([]); // Produktdaten vom Backend
+    const [loading, setLoading] = React.useState(true); // Ladezustand für Produktdaten
+    const [error, setError] = React.useState(null); // Fehlerzustand
+
+    /**
+     * Lädt Produktdaten beim ersten Rendern
+     */
+    React.useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const products = await apiClient.getProducts();
+                setSubscriptionPlans(products);
+            } catch (err) {
+                setError('Fehler beim Laden der Produktdaten. Bitte versuchen Sie es später erneut.');
+                console.error('Fehler beim Laden der Produkte:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadProducts();
+    }, []);
 
     /**
      * Handler für das Umschalten zwischen monatlicher und jährlicher Zahlung
@@ -248,25 +275,64 @@ function App() {
                         Unsere Abonnementpläne
                     </h1>
                     
-                    {/* Zahlungsintervall-Umschalter */}
-                    <PaymentToggle 
-                        isMonthly={isMonthly} 
-                        onToggle={handleToggle} 
-                    />
+                    {/* Zahlungsintervall-Umschalter - nur anzeigen wenn Daten geladen */}
+                    {!loading && !error && (
+                        <PaymentToggle 
+                            isMonthly={isMonthly} 
+                            onToggle={handleToggle}
+                            plans={subscriptionPlans}
+                        />
+                    )}
                 </div>
 
-                {/* Responsive Grid für Abonnementkarten */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                    {subscriptionPlans.map((plan) => (
-                        <SubscriptionCard
-                            key={plan.id}
-                            plan={plan}
-                            isMonthly={isMonthly}
-                            isSelected={selectedPlanId === plan.id}
-                            onSelect={handleSelectPlan}
-                        />
-                    ))}
-                </div>
+                {/* Loading State */}
+                {loading && (
+                    <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Produktdaten werden geladen...</p>
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && (
+                    <div className="text-center py-12">
+                        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Fehler beim Laden</h3>
+                        <p className="text-gray-600 mb-4">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Erneut versuchen
+                        </button>
+                    </div>
+                )}
+
+                {/* Responsive Grid für Abonnementkarten - nur anzeigen wenn Daten vorhanden */}
+                {!loading && !error && subscriptionPlans.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                        {subscriptionPlans.map((plan) => (
+                            <SubscriptionCard
+                                key={plan.id}
+                                plan={plan}
+                                isMonthly={isMonthly}
+                                isSelected={selectedPlanId === plan.id}
+                                onSelect={handleSelectPlan}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Keine Produkte gefunden */}
+                {!loading && !error && subscriptionPlans.length === 0 && (
+                    <div className="text-center py-12">
+                        <p className="text-gray-600">Keine Abonnementpläne verfügbar.</p>
+                    </div>
+                )}
             </div>
 
             {/* Payment Status Modal - Overlay für Zahlungsfeedback */}
