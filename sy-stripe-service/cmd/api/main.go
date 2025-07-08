@@ -65,11 +65,15 @@ func main() {
 	stripeService := handlers.NewStripeService()
 	stripeHandlers := handlers.NewStripeHandlers(stripeService, userService, subService)
 
+	// Product endpoint
+	productService := services.NewProductService()
+	productHandler := handlers.NewProductHandler(productService)
+
 	v1 := r.Group("/api/v1")
 	{
 		v1.POST("/customers/create", stripeHandlers.CreateCustomerHandler)
 		v1.POST("/subscriptions/create", stripeHandlers.CreateSubscriptionHandler)
-		v1.GET("/products", stripeHandlers.GetProductsHandler)
+		v1.GET("/products", productHandler.GetProductsHandler)
 	}
 
 	// Start HTTP server

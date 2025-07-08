@@ -31,4 +31,23 @@ type Subscription struct {
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// PriceResponse represents a Stripe price in the API response.
+type PriceResponse struct {
+	ID        string  `json:"id"`
+	Nickname  string  `json:"nickname"`
+	UnitAmount int64   `json:"unit_amount"`
+	Currency  string  `json:"currency"`
+	Interval  string  `json:"interval"`
+	Created   int64   `json:"created"`
+}
+
+// ProductResponse represents a Stripe product with nested prices.
+type ProductResponse struct {
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Active      bool            `json:"active"`
+	Prices      []PriceResponse `json:"prices"`
+}
+
 // Add other models as needed, e.g., Product, Price, Invoice, etc.
