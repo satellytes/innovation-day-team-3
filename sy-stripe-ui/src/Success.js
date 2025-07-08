@@ -1,5 +1,6 @@
-import React from 'react';
-import logo from './logo.png';
+// import React from 'react';
+// import logo from './logo.png';
+const logo = './src/logo.png'; // Pfad zum Logo
 
 /**
  * Success-Seite nach erfolgreichem Checkout
@@ -41,9 +42,6 @@ function Success() {
         window.location.href = '/';
     };
 
-    const handleViewSuccess = () => {
-        window.location.href = '/success';
-    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -199,24 +197,12 @@ function Success() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                        <div className="mt-8 flex justify-center">
                             <button
                                 onClick={handleBackToHome}
                                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                             >
                                 Zurück zur Startseite
-                            </button>
-                            <button
-                                onClick={handleViewSuccess}
-                                className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
-                            >
-                                Success-Seite ansehen
-                            </button>
-                            <button
-                                onClick={() => window.print()}
-                                className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium"
-                            >
-                                Rechnung drucken
                             </button>
                         </div>
                     </div>
@@ -226,4 +212,5 @@ function Success() {
     );
 }
 
-export default Success;
+// export default Success;
+window.Success = Success; // Globale Variable für Browser

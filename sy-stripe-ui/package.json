@@ -4,7 +4,7 @@
   "description": "React Abonnementpläne Anwendung",
   "main": "src/index.js",
   "scripts": {
-    "start": "webpack serve --mode development --open",
+    "start": "node server.js",
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "serve": "node server.js"

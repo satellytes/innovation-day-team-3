@@ -1,5 +1,6 @@
-import React from 'react';
-import logo from './logo.png';
+// import React from 'react';
+// import logo from './logo.png';
+const logo = './src/logo.png'; // Pfad zum Logo
 
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
@@ -495,4 +496,5 @@ function App() {
     );
 }
 
-export default App;
+// export default App;
+window.App = App; // Globale Variable für Browser
