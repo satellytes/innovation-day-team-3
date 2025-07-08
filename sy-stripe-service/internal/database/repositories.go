@@ -13,6 +13,7 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUserByStripeCustomerID(ctx context.Context, customerID string) (*models.User, error)
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
 	GetAllUsers(ctx context.Context) ([]*models.User, error)
 }
 
@@ -46,6 +47,17 @@ func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]*models.Use
 // PostgresUserRepository implements UserRepository.
 type PostgresUserRepository struct {
 	pool *pgxpool.Pool
+}
+
+func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE id = $1`
+	row := r.pool.QueryRow(ctx, query, id)
+	var u models.User
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return &u, nil
 }
 
 func NewPostgresUserRepository(pool *pgxpool.Pool) *PostgresUserRepository {

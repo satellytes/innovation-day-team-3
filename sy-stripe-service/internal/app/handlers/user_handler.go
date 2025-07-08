@@ -23,3 +23,14 @@ func (h *UserHandler) GetAllUsersHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, users)
 }
+
+// GetUserByIDHandler returns a user by internal UUID
+func (h *UserHandler) GetUserByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	user, err := h.Service.GetUserByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}

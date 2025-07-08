@@ -15,6 +15,17 @@ type InMemoryUserRepository struct {
 	users map[string]*models.User // key: StripeCustomerID
 }
 
+func (r *InMemoryUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, user := range r.users {
+		if user.ID.String() == id {
+			return user, nil
+		}
+	}
+	return nil, fmt.Errorf("user not found")
+}
+
 func (r *InMemoryUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

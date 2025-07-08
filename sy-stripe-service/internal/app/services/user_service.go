@@ -13,6 +13,11 @@ type UserService struct {
 	Repo database.UserRepository
 }
 
+// GetUserByID retrieves a user by internal UUID
+func (s *UserService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	return s.Repo.GetUserByID(ctx, id)
+}
+
 func (s *UserService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
 	type allUserRepo interface {
 		GetAllUsers(ctx context.Context) ([]*models.User, error)

@@ -82,6 +82,11 @@ func main() {
 	subService := services.NewSubscriptionService(userRepo.(database.UserRepository), subRepo.(database.SubscriptionRepository))
 	stripeService := handlers.NewStripeService()
 
+	userHandler := handlers.NewUserHandler(userService)
+
+	// Customer details endpoint
+	r.GET("/api/v1/customer/:id", userHandler.GetUserByIDHandler)
+
 	subscriptionHandler := handlers.NewSubscriptionHandler(subService)
 
 	// Subscription management endpoints

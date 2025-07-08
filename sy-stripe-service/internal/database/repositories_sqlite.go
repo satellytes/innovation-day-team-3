@@ -31,6 +31,26 @@ type SQLiteUserRepository struct {
 	db *sql.DB
 }
 
+func (r *SQLiteUserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	query := `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users WHERE id = ?`
+	row := r.db.QueryRowContext(ctx, query, id)
+	var u models.User
+	var createdAtStr, updatedAtStr string
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &createdAtStr, &updatedAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	u.CreatedAt, err = parseAnyTime(createdAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse created_at: %w", err)
+	}
+	u.UpdatedAt, err = parseAnyTime(updatedAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse updated_at: %w", err)
+	}
+	return &u, nil
+}
+
 func NewSQLiteUserRepository(db *sql.DB) *SQLiteUserRepository {
 	return &SQLiteUserRepository{db: db}
 }
