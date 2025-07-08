@@ -69,11 +69,14 @@ func main() {
 	productService := services.NewProductService()
 	productHandler := handlers.NewProductHandler(productService)
 
+	checkoutHandler := handlers.NewCheckoutHandler(subService, cfg.AppSuccessURL, cfg.AppCancelURL)
+
 	v1 := r.Group("/api/v1")
 	{
 		v1.POST("/customers/create", stripeHandlers.CreateCustomerHandler)
 		v1.POST("/subscriptions/create", stripeHandlers.CreateSubscriptionHandler)
 		v1.GET("/products", productHandler.GetProductsHandler)
+		v1.POST("/checkout-session", checkoutHandler.CreateCheckoutSessionHandler)
 	}
 
 	// Start HTTP server

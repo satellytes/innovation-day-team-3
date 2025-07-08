@@ -9,9 +9,11 @@ import (
 
 // Config holds the application configuration
 type Config struct {
-	ServerPort    string
-	DatabaseURL   string
+	ServerPort      string
+	DatabaseURL     string
 	StripeSecretKey string
+	AppSuccessURL   string
+	AppCancelURL    string
 }
 
 // LoadConfig loads configuration from environment variables or .env file
@@ -22,9 +24,11 @@ func LoadConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		ServerPort:    getEnv("SERVER_PORT", "8080"),
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		ServerPort:      getEnv("SERVER_PORT", "8080"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		StripeSecretKey: os.Getenv("STRIPE_SECRET_KEY"),
+		AppSuccessURL:   os.Getenv("APP_SUCCESS_URL"),
+		AppCancelURL:    os.Getenv("APP_CANCEL_URL"),
 	}
 
 	// Basic validation
