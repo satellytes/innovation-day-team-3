@@ -27,23 +27,31 @@ func main() {
 	// Initialize database connection
 	db, err := database.NewDB(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	// Initialize Gin router
-	r := gin.Default()
+	// Apply migrations for SQLite in-memory database
+	if cfg.DatabaseURL == "file::memory:?cache=shared" {
+		err = database.ApplyMigrations(db.SQLite, "./migrations")
+		if err != nil {
+			log.Fatalf("Failed to apply migrations: %v", err)
+		}
+	}
 
 	// Initialize Stripe
 	stripe.Key = cfg.StripeSecretKey
 
-	// Initialize handlers
+	// Initialize Gin router
+	r := gin.Default()
+
+	// Register health check route
 	healthHandler := handlers.NewHealthHandler()
+	r.GET("/health", healthHandler.HealthCheckHandler)
+
+	// Register Stripe API routes
 	stripeService := handlers.NewStripeService()
 	stripeHandlers := handlers.NewStripeHandlers(stripeService)
-
-	// Register routes
-	r.GET("/health", healthHandler.HealthCheckHandler)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -60,12 +68,11 @@ func main() {
 
 	// Goroutine to start the server
 	go func() {
+		log.Printf("Server is running on port %s\n", cfg.ServerPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-
-	log.Printf("Server is running on port %s", cfg.ServerPort)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
