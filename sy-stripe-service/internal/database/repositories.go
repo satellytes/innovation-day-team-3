@@ -35,7 +35,7 @@ func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]*models.Use
 	var users []*models.User
 	for rows.Next() {
 		var u models.User
-		err := rows.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+		err := rows.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -65,10 +65,10 @@ func NewPostgresUserRepository(pool *pgxpool.Pool) *PostgresUserRepository {
 }
 
 func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	query := `INSERT INTO users (id, stripe_customer_id, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, stripe_customer_id, email, created_at, updated_at`
-	row := r.pool.QueryRow(ctx, query, user.ID, user.StripeCustomerID, user.Email, user.CreatedAt, user.UpdatedAt)
+	query := `INSERT INTO users (id, stripe_customer_id, email, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, stripe_customer_id, email, name, created_at, updated_at`
+	row := r.pool.QueryRow(ctx, query, user.ID, user.StripeCustomerID, user.Email, user.Name, user.CreatedAt, user.UpdatedAt)
 	var u models.User
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}

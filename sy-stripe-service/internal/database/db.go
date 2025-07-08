@@ -151,7 +151,7 @@ func ApplyMigrations(db *sql.DB, migrationsDir string) error {
 		return fmt.Errorf("failed to read migration files: %w", err)
 	}
 
-	// Fallback: If no driver-specific files, try generic *.sql
+	// Fallback: If no driver-specific files, try generic *.sql, but NEVER run the other DB's files
 	if len(files) == 0 {
 		log.Printf("No %s files found, falling back to *.sql", pattern)
 		files, err = filepath.Glob(filepath.Join(migrationsDir, "*.sql"))
@@ -159,6 +159,25 @@ func ApplyMigrations(db *sql.DB, migrationsDir string) error {
 			log.Printf("Migration file glob error: %v", err)
 			return fmt.Errorf("failed to read migration files: %w", err)
 		}
+	}
+
+	// Filter out any *.postgres.sql or *.sqlite.sql files from the fallback list
+	if driverName == "sqlite3" {
+		var filtered []string
+		for _, f := range files {
+			if !strings.HasSuffix(f, ".postgres.sql") {
+				filtered = append(filtered, f)
+			}
+		}
+		files = filtered
+	} else if driverName == "postgres" {
+		var filtered []string
+		for _, f := range files {
+			if !strings.HasSuffix(f, ".sqlite.sql") {
+				filtered = append(filtered, f)
+			}
+		}
+		files = filtered
 	}
 
 	sort.Strings(files)
