@@ -187,7 +187,12 @@ function App() {
                 setLoading(true);
                 setError(null);
                 const products = await apiClient.getProducts();
-                setSubscriptionPlans(products);
+                
+                // Sortiere Produkte nach Preis (aufsteigend)
+                // Verwende den monatlichen Preis als Basis für die Sortierung
+                const sortedProducts = products.sort((a, b) => a.monthlyPrice - b.monthlyPrice);
+                
+                setSubscriptionPlans(sortedProducts);
             } catch (err) {
                 setError('Fehler beim Laden der Produktdaten. Bitte versuchen Sie es später erneut.');
                 console.error('Fehler beim Laden der Produkte:', err);
