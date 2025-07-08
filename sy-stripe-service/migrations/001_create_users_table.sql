@@ -1,5 +1,5 @@
 -- Add UUID extension for PostgreSQL if not using SQLite
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     stripe_customer_id TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,

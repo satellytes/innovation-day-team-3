@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -32,8 +33,8 @@ func main() {
 	}
 	defer db.Close()
 
-	// Apply migrations for SQLite in-memory database
-	if cfg.DatabaseURL == "file::memory:?cache=shared" {
+	// Apply migrations for SQLite file-based and in-memory databases
+	if strings.HasPrefix(cfg.DatabaseURL, "file:") || strings.HasPrefix(cfg.DatabaseURL, "./") || cfg.DatabaseURL == ":memory:" {
 		err = database.ApplyMigrations(db.SQLite, "./migrations")
 		if err != nil {
 			log.Fatalf("Failed to apply migrations: %v", err)
@@ -70,6 +71,9 @@ func main() {
 	if db.Postgres != nil {
 		userRepo = database.NewPostgresUserRepository(db.Postgres)
 		subRepo = database.NewPostgresSubscriptionRepository(db.Postgres)
+	} else if db.SQLite != nil {
+		userRepo = database.NewSQLiteUserRepository(db.SQLite)
+		subRepo = database.NewSQLiteSubscriptionRepository(db.SQLite)
 	} else {
 		userRepo = database.NewInMemoryUserRepository()
 		subRepo = database.NewInMemorySubscriptionRepository()
@@ -88,6 +92,7 @@ func main() {
 	v1 := r.Group("/api/v1")
 	{
 		v1.POST("/customers/create", stripeHandlers.CreateCustomerHandler)
+		v1.GET("/customers", handlers.NewUserHandler(userService).GetAllUsersHandler)
 		v1.POST("/subscriptions/create", stripeHandlers.CreateSubscriptionHandler)
 		v1.GET("/products", productHandler.GetProductsHandler)
 		v1.POST("/checkout-session", checkoutHandler.CreateCheckoutSessionHandler)

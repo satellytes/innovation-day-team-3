@@ -15,6 +15,16 @@ type InMemoryUserRepository struct {
 	users map[string]*models.User // key: StripeCustomerID
 }
 
+func (r *InMemoryUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	users := make([]*models.User, 0, len(r.users))
+	for _, u := range r.users {
+		users = append(users, u)
+	}
+	return users, nil
+}
+
 func NewInMemoryUserRepository() *InMemoryUserRepository {
 	return &InMemoryUserRepository{
 		users: make(map[string]*models.User),

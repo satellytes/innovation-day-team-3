@@ -7,7 +7,7 @@ POST http://localhost:8080/api/v1/customers/create
 Content-Type: application/json
 
 {
-  "email": "arthur.erdoes+stripe@satellytes.com",
+  "email": "arthur.erdoes@satellytes.com",
   "name": "John Doe"
 }
 

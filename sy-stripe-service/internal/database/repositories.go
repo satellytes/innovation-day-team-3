@@ -13,6 +13,7 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUserByStripeCustomerID(ctx context.Context, customerID string) (*models.User, error)
+	GetAllUsers(ctx context.Context) ([]*models.User, error)
 }
 
 // SubscriptionRepository defines DB operations for subscriptions.
@@ -21,6 +22,24 @@ type SubscriptionRepository interface {
 	GetSubscriptionByStripeSubscriptionID(ctx context.Context, subID string) (*models.Subscription, error)
 	UpdateSubscriptionStatus(ctx context.Context, subID string, status string) error
 	UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error)
+}
+
+func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
+	rows, err := r.pool.Query(ctx, `SELECT id, stripe_customer_id, email, created_at, updated_at FROM users`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var users []*models.User
+	for rows.Next() {
+		var u models.User
+		err := rows.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &u)
+	}
+	return users, nil
 }
 
 // PostgresUserRepository implements UserRepository.

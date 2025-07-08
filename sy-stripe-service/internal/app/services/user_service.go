@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"github.com/google/uuid"
 	"sy-stripe-service/internal/database"
@@ -10,6 +11,17 @@ import (
 
 type UserService struct {
 	Repo database.UserRepository
+}
+
+func (s *UserService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
+	type allUserRepo interface {
+		GetAllUsers(ctx context.Context) ([]*models.User, error)
+	}
+	repo, ok := s.Repo.(allUserRepo)
+	if !ok {
+		return nil, fmt.Errorf("repository does not support GetAllUsers")
+	}
+	return repo.GetAllUsers(ctx)
 }
 
 func NewUserService(repo database.UserRepository) *UserService {
