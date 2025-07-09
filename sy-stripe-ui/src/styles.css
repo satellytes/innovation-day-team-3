@@ -1,3 +1,66 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+
+.font-luckiest {
+  font-family: 'Luckiest Guy', cursive !important;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+
+body, html, .font-sans {
+  font-family: 'Coco Gothic', sans-serif !important;
+  background: linear-gradient(135deg, #f5faff 0%, #e6edfa 100%);
+}
+
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.card-hover:hover {
+  transform: scale(1.045) translateY(-4px);
+  box-shadow: 0 8px 32px 0 rgba(39,67,166,0.15), 0 1.5px 3px 0 rgba(0,0,0,0.03);
+  z-index: 2;
+}
+
+.badge-popular {
+  background: linear-gradient(90deg,#2743a6 60%,#3b82f6 100%);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.25em 0.9em;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 3px #e6edfa, 0 4px 16px 0 rgba(39,67,166,0.13);
+  letter-spacing: 0.04em;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+
+
+@font-face {
+  font-family: 'Coco Gothic';
+  src: url('./fonts/CocoGothic.woff2') format('woff2'),
+       url('./fonts/CocoGothic.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-coco {
+  font-family: 'Coco Gothic', sans-serif !important;
+}
+
+
+.background-logo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: url('./logo2.png') center center no-repeat;
+  background-size: cover;
+  opacity: 0.07;
+  pointer-events: none;
+}

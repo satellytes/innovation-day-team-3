@@ -26,7 +26,6 @@ func parseAnyTime(s string) (time.Time, error) {
 	return t, err
 }
 
-
 type SQLiteUserRepository struct {
 	db *sql.DB
 }
@@ -36,7 +35,7 @@ func (r *SQLiteUserRepository) GetUserByID(ctx context.Context, id string) (*mod
 	row := r.db.QueryRowContext(ctx, query, id)
 	var u models.User
 	var createdAtStr, updatedAtStr string
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &createdAtStr, &updatedAtStr)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &createdAtStr, &updatedAtStr)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
@@ -94,7 +93,7 @@ func (r *SQLiteUserRepository) GetAllUsers(ctx context.Context) ([]*models.User,
 	for rows.Next() {
 		var u models.User
 		var createdAtStr, updatedAtStr string
-		err := rows.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &createdAtStr, &updatedAtStr)
+		err := rows.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &createdAtStr, &updatedAtStr)
 		if err != nil {
 			return nil, err
 		}

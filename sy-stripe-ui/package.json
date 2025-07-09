@@ -4,17 +4,22 @@
   "description": "React Abonnementpläne Anwendung",
   "main": "src/index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "webpack serve --mode development --open",
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "serve": "node server.js"
   },
-  "keywords": ["react", "subscription", "tailwind"],
+  "keywords": [
+    "react",
+    "subscription",
+    "tailwind"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",

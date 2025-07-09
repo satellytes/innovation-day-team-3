@@ -1,6 +1,5 @@
-// import React from 'react';
-// import logo from './logo.png';
-const logo = './src/logo.png'; // Pfad zum Logo
+import React from 'react';
+import logo from './logo2.png'; // Webpack will resolve and bundle this
 
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
@@ -366,6 +365,10 @@ function App() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 mb-6 sm:mb-8 leading-tight">
                         Unsere Abonnementpläne
                     </h1>
+                    {/* Salutation with customer name from localStorage */}
+                    {typeof window !== 'undefined' && localStorage.getItem('user_name') && (
+                        <div className="text-xl text-blue-700 mb-6 font-medium">{localStorage.getItem('user_name')} - Wähle Dein Abo!</div>
+                    )}
                     
                     {/* Zahlungsintervall-Umschalter - nur anzeigen wenn Daten geladen */}
                     {!loading && !error && (
@@ -496,5 +499,4 @@ function App() {
     );
 }
 
-// export default App;
-window.App = App; // Globale Variable für Browser
+export default App;

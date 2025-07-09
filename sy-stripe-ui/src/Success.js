@@ -1,6 +1,5 @@
-// import React from 'react';
-// import logo from './logo.png';
-const logo = './src/logo.png'; // Pfad zum Logo
+import React from 'react';
+import logo from './logo2.png'; // Webpack will resolve and bundle this
 
 /**
  * Success-Seite nach erfolgreichem Checkout
@@ -212,5 +211,4 @@ function Success() {
     );
 }
 
-// export default Success;
-window.Success = Success; // Globale Variable für Browser
+export default Success;
