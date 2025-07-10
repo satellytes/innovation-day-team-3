@@ -4,12 +4,88 @@ import logo from './logo2.png'; // Webpack will resolve and bundle this
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
+// Mock-Daten für Entwicklung ohne Backend
+const MOCK_PRODUCTS = [
+    {
+        id: 'prod_basic',
+        name: 'Basic Plan',
+        description: 'Perfekt für Einsteiger',
+        active: true,
+        prices: [
+            {
+                id: 'price_basic_monthly',
+                nickname: 'Basic Monthly',
+                unit_amount: 999, // 9.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_basic_yearly',
+                nickname: 'Basic Yearly',
+                unit_amount: 9990, // 99.90 EUR in Cent (entspricht 8.33 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    },
+    {
+        id: 'prod_pro',
+        name: 'Pro Plan',
+        description: 'Für professionelle Nutzer',
+        active: true,
+        prices: [
+            {
+                id: 'price_pro_monthly',
+                nickname: 'Pro Monthly',
+                unit_amount: 1999, // 19.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_pro_yearly',
+                nickname: 'Pro Yearly',
+                unit_amount: 19990, // 199.90 EUR in Cent (entspricht 16.66 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    },
+    {
+        id: 'prod_enterprise',
+        name: 'Enterprise Plan',
+        description: 'Für große Unternehmen',
+        active: true,
+        prices: [
+            {
+                id: 'price_enterprise_monthly',
+                nickname: 'Enterprise Monthly',
+                unit_amount: 4999, // 49.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_enterprise_yearly',
+                nickname: 'Enterprise Yearly',
+                unit_amount: 49990, // 499.90 EUR in Cent (entspricht 41.66 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    }
+];
+
 /**
  * API-Client für Backend-Kommunikation
  */
 const apiClient = {
     /**
-     * Lädt Produktdaten vom Backend
+     * Lädt Produktdaten vom Backend oder verwendet Mock-Daten als Fallback
      * @returns {Promise<Array>} - Array von Produkten mit Preisen
      */
     async getProducts() {
@@ -21,41 +97,83 @@ const apiClient = {
             const products = await response.json();
             
             // Transformiere Backend-Daten in Frontend-Format
-            return products.map(product => {
-                // Finde monatliche und jährliche Preise
-                const monthlyPrice = product.prices.find(p => p.interval === 'month');
-                const yearlyPrice = product.prices.find(p => p.interval === 'year');
-                
-                // Berechne Rabatt für jährliche Zahlung
-                const yearlyDiscountPercentage = monthlyPrice && yearlyPrice 
-                    ? Math.round((1 - (yearlyPrice.unit_amount / 100) / (monthlyPrice.unit_amount / 100 * 12)) * 100)
-                    : 0;
-                
-                return {
-                    id: product.id,
-                    name: product.name,
-                    description: product.description,
-                    monthlyPrice: monthlyPrice ? monthlyPrice.unit_amount / 100 : 0,
-                    yearlyPrice: yearlyPrice ? yearlyPrice.unit_amount / 100 : 0,
-                    yearlyDiscountPercentage,
-                    monthlyPriceId: monthlyPrice?.id,
-                    yearlyPriceId: yearlyPrice?.id,
-                    features: [
-                        // Fallback-Features, da Stripe keine Feature-Liste hat
-                        'Alle Grundfunktionen',
-                        'E-Mail Support',
-                        'Monatliche Updates'
-                    ]
-                };
-            });
+            return this.transformProductData(products);
         } catch (error) {
-            console.error('Fehler beim Laden der Produkte:', error);
-            throw error;
+            console.warn('Backend nicht erreichbar, verwende Mock-Daten:', error);
+            // Fallback auf Mock-Daten für Entwicklung
+            return this.transformProductData(MOCK_PRODUCTS);
         }
     },
 
     /**
-     * Erstellt einen neuen Kunden in Stripe
+     * Transformiert Produktdaten in das Frontend-Format
+     * @param {Array} products - Rohe Produktdaten
+     * @returns {Array} - Transformierte Produktdaten
+     */
+    transformProductData(products) {
+        return products.map(product => {
+            // Finde monatliche und jährliche Preise
+            const monthlyPrice = product.prices.find(p => p.interval === 'month');
+            const yearlyPrice = product.prices.find(p => p.interval === 'year');
+            
+            // Berechne Rabatt für jährliche Zahlung
+            const yearlyDiscountPercentage = monthlyPrice && yearlyPrice 
+                ? Math.round((1 - (yearlyPrice.unit_amount / 100) / (monthlyPrice.unit_amount / 100 * 12)) * 100)
+                : 0;
+            
+            // Definiere Features basierend auf dem Plan
+            let features = [];
+            if (product.name.toLowerCase().includes('basic')) {
+                features = [
+                    'Bis zu 5 Projekte',
+                    'E-Mail Support',
+                    'Grundlegende Analytics',
+                    'Mobile App Zugang'
+                ];
+            } else if (product.name.toLowerCase().includes('pro')) {
+                features = [
+                    'Unbegrenzte Projekte',
+                    'Prioritäts-Support',
+                    'Erweiterte Analytics',
+                    'API Zugang',
+                    'Team Kollaboration',
+                    'Export Funktionen'
+                ];
+            } else if (product.name.toLowerCase().includes('enterprise')) {
+                features = [
+                    'Alles aus Pro Plan',
+                    'Dedicated Account Manager',
+                    'Custom Integrationen',
+                    'SLA Garantie',
+                    'Advanced Security',
+                    'White-Label Optionen',
+                    'Onboarding Support'
+                ];
+            } else {
+                // Fallback-Features
+                features = [
+                    'Alle Grundfunktionen',
+                    'E-Mail Support',
+                    'Monatliche Updates'
+                ];
+            }
+            
+            return {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                monthlyPrice: monthlyPrice ? monthlyPrice.unit_amount / 100 : 0,
+                yearlyPrice: yearlyPrice ? yearlyPrice.unit_amount / 100 : 0,
+                yearlyDiscountPercentage,
+                monthlyPriceId: monthlyPrice?.id,
+                yearlyPriceId: yearlyPrice?.id,
+                features
+            };
+        });
+    },
+
+    /**
+     * Erstellt einen neuen Kunden in Stripe oder simuliert dies mit Mock-Daten
      * @param {string} email - E-Mail-Adresse des Kunden
      * @param {string} name - Name des Kunden
      * @returns {Promise<Object>} - Kundendaten mit user.id
@@ -79,13 +197,20 @@ const apiClient = {
 
             return await response.json();
         } catch (error) {
-            console.error('Fehler beim Erstellen des Kunden:', error);
-            throw error;
+            console.warn('Backend nicht erreichbar, simuliere Kundenerstellung:', error);
+            // Mock-Antwort für Entwicklung
+            return {
+                id: `mock_user_${Date.now()}`,
+                stripe_customer_id: `cus_mock_${Date.now()}`,
+                email: email,
+                name: name,
+                created_at: new Date().toISOString()
+            };
         }
     },
 
     /**
-     * Erstellt eine Checkout-Session für das Abonnement
+     * Erstellt eine Checkout-Session für das Abonnement oder simuliert dies mit Mock-Daten
      * @param {string} priceId - Stripe Price ID
      * @param {string} userId - User ID vom erstellten Kunden
      * @returns {Promise<Object>} - Session-Daten mit sessionUrl
@@ -109,8 +234,15 @@ const apiClient = {
 
             return await response.json();
         } catch (error) {
-            console.error('Fehler beim Erstellen der Checkout-Session:', error);
-            throw error;
+            console.warn('Backend nicht erreichbar, simuliere Checkout-Session:', error);
+            // Mock-Antwort für Entwicklung - simuliert erfolgreiche Zahlung nach kurzer Verzögerung
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Simuliere erfolgreiche Zahlung (in echter App würde hier zu Stripe weitergeleitet)
+            return {
+                sessionUrl: '#mock-checkout-success',
+                sessionId: `cs_mock_${Date.now()}`
+            };
         }
     }
 };
@@ -307,10 +439,15 @@ function App() {
                 customerData.id
             );
 
-            // Schritt 3: Weiterleitung zu Stripe Checkout
+            // Schritt 3: Weiterleitung zu Stripe Checkout oder Mock-Erfolg
             if (checkoutData.sessionUrl) {
-                // Leite zur Stripe Checkout-Seite weiter
-                window.location.href = checkoutData.sessionUrl;
+                if (checkoutData.sessionUrl === '#mock-checkout-success') {
+                    // Mock-Modus: Simuliere erfolgreiche Zahlung
+                    setPaymentStatus('success');
+                } else {
+                    // Echter Modus: Leite zur Stripe Checkout-Seite weiter
+                    window.location.href = checkoutData.sessionUrl;
+                }
             } else {
                 throw new Error('Keine Session-URL erhalten');
             }
