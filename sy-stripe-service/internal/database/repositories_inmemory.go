@@ -48,6 +48,10 @@ func (r *InMemoryUserRepository) CreateUser(ctx context.Context, user *models.Us
 	if _, exists := r.users[user.StripeCustomerID]; exists {
 		return nil, fmt.Errorf("user already exists")
 	}
+	// Ensure name is set (should already be, but for safety)
+	if user.Name == "" {
+		user.Name = "Unbekannt"
+	}
 	r.users[user.StripeCustomerID] = user
 	return user, nil
 }

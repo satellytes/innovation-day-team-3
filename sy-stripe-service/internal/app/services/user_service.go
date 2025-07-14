@@ -33,11 +33,12 @@ func NewUserService(repo database.UserRepository) *UserService {
 	return &UserService{Repo: repo}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, email string, stripeCustomerID string) (*models.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, email, name, stripeCustomerID string) (*models.User, error) {
 	id := uuid.New()
 	user := &models.User{
 		ID: id,
 		Email: email,
+		Name: name,
 		StripeCustomerID: stripeCustomerID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

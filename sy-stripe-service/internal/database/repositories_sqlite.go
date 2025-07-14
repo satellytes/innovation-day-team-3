@@ -55,8 +55,8 @@ func NewSQLiteUserRepository(db *sql.DB) *SQLiteUserRepository {
 }
 
 func (r *SQLiteUserRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	query := `INSERT INTO users (id, stripe_customer_id, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
-	_, err := r.db.ExecContext(ctx, query, user.ID, user.StripeCustomerID, user.Email, user.CreatedAt, user.UpdatedAt)
+	query := `INSERT INTO users (id, stripe_customer_id, email, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := r.db.ExecContext(ctx, query, user.ID, user.StripeCustomerID, user.Email, user.Name, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}

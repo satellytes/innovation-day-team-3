@@ -8,6 +8,37 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // State for adding a customer
+  const [showAddRow, setShowAddRow] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: '', email: '' });
+  const [addingCustomer, setAddingCustomer] = useState(false);
+  const [addError, setAddError] = useState(null);
+
+  const handleSaveNewCustomer = async () => {
+    setAddingCustomer(true);
+    setAddError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/customers/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCustomer.name, email: newCustomer.email })
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || 'Fehler beim Anlegen des Kunden');
+      }
+      const created = await res.json();
+      const newUser = created.user || created; // fallback for old API
+      setUsers([newUser, ...users]);
+      setShowAddRow(false);
+      setNewCustomer({ name: '', email: '' });
+    } catch (e) {
+      setAddError(e.message);
+    } finally {
+      setAddingCustomer(false);
+    }
+  };
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/customers`)
       .then(res => {
@@ -39,6 +70,15 @@ export default function HomePage() {
           </h1>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="mb-6 flex justify-end">
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold shadow"
+              onClick={() => setShowAddRow(true)}
+              type="button"
+            >
+              Kunden hinzufügen
+            </button>
+          </div>
           {loading && <p>Lade Kunden ...</p>}
           {error && <p className="text-red-500">Fehler: {error.message}</p>}
           {!loading && !error && (
@@ -52,6 +92,48 @@ export default function HomePage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+                {showAddRow && (
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        type="text"
+                        placeholder="Name"
+                        value={newCustomer.name}
+                        onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                        disabled={addingCustomer}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        type="email"
+                        placeholder="E-Mail"
+                        value={newCustomer.email}
+                        onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                        disabled={addingCustomer}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">(wird automatisch vergeben)</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mr-2 ${addingCustomer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={handleSaveNewCustomer}
+                        disabled={addingCustomer || !newCustomer.name || !newCustomer.email}
+                      >
+                        {addingCustomer ? 'Speichern...' : 'Speichern'}
+                      </button>
+                      <button
+                        className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+                        onClick={() => { setShowAddRow(false); setNewCustomer({ name: '', email: '' }); setAddError(null); }}
+                        disabled={addingCustomer}
+                      >
+                        Abbrechen
+                      </button>
+                      {addError && <p className="text-red-500">{addError}</p>}
+                    </td>
+                  </tr>
+                )}
                 {users.map(user => (
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.name}</td>

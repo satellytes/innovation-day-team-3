@@ -85,7 +85,7 @@ type StripeHandlers struct {
 
 // UserService defines the interface for user operations.
 type UserService interface {
-	CreateUser(ctx context.Context, email string, stripeCustomerID string) (*models.User, error)
+	CreateUser(ctx context.Context, email, name, stripeCustomerID string) (*models.User, error)
 }
 
 // SubscriptionService defines the interface for subscription operations.
@@ -118,7 +118,7 @@ func (h *StripeHandlers) CreateCustomerHandler(c *gin.Context) {
 	}
 
 	// 2. Persist user in DB
-	user, err := h.userService.CreateUser(c.Request.Context(), req.Email, customer.ID)
+	user, err := h.userService.CreateUser(c.Request.Context(), req.Email, req.Name, customer.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to persist user: %v", err)})
 		return
