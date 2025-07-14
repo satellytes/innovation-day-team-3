@@ -58,12 +58,17 @@ function Success() {
         );
     }
 
-    // Stripe session data fields (fallback to raw JSON if unsure)
-    const customerEmail = sessionData.customer_details?.email || sessionData.customer_email || 'Unbekannt';
-    const amount = (sessionData.amount_total ? sessionData.amount_total / 100 : null) || (sessionData.display_items?.[0]?.amount / 100) || null;
-    const currency = sessionData.currency || 'eur';
-    const productName = sessionData.metadata?.product_name || sessionData.display_items?.[0]?.custom?.name || 'Produkt';
-    const interval = sessionData.metadata?.interval || 'monatlich';
+    // Extract nested session and user objects from backend response
+    const session = sessionData?.session || {};
+    const user = sessionData?.user || {};
+
+    // Prefer Stripe session details, fallback to user DB info
+    const customerEmail = session.customer_details?.email || user.email || 'Unbekannt';
+    const customerName = session.customer_details?.name || user.name || 'Unbekannt';
+    const amount = session.amount_total ? session.amount_total / 100 : null;
+    const currency = session.currency || 'eur';
+    const productName = session.metadata?.product_name || 'Produkt';
+    const interval = session.metadata?.interval || 'monatlich';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -114,11 +119,11 @@ function Success() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Name:</span>
-                                            <span className="font-medium text-gray-900">{sessionData.customer_details?.name || sessionData.customer_name || "Unbekannt"}</span>
+                                            <span className="font-medium text-gray-900">{customerName}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">E-Mail:</span>
-                                            <span className="font-medium text-gray-900">{sessionData.customer_details?.email || sessionData.customer_email || "Unbekannt"}</span>
+                                            <span className="font-medium text-gray-900">{customerEmail}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -134,15 +139,15 @@ function Success() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Bestell-ID:</span>
-                                            <span className="font-medium text-gray-900 font-mono text-sm">{sessionData.id || "-"}</span>
+                                            <span className="font-medium text-gray-900 font-mono text-sm">{session.id || "-"}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Datum:</span>
-                                            <span className="font-medium text-gray-900">{sessionData.created ? new Date(sessionData.created * 1000).toLocaleString() : "-"}</span>
+                                            <span className="font-medium text-gray-900">{session.created ? new Date(session.created * 1000).toLocaleString() : "-"}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Gesamtbetrag:</span>
-                                            <span className="font-bold text-gray-900 text-lg">€{sessionData.amount_total ? (sessionData.amount_total / 100).toFixed(2) : "-"} {sessionData.currency ? sessionData.currency.toUpperCase() : ""}</span>
+                                            <span className="font-bold text-gray-900 text-lg">€{amount ? amount.toFixed(2) : "-"} {currency ? currency.toUpperCase() : ""}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -158,17 +163,17 @@ function Success() {
                                 </h2>
                                 
                                 <div className="mb-4">
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{sessionData.metadata?.product_name || sessionData.display_items?.[0]?.custom?.name || "Produkt"}</h3>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{productName}</h3>
                                     <div className="flex items-baseline mb-4">
-                                        <span className="text-3xl font-bold text-blue-600">€{sessionData.amount_total ? (sessionData.amount_total / 100).toFixed(2) : "-"}</span>
-                                        <span className="text-gray-600 ml-2">/{sessionData.metadata?.interval || "monatlich"}</span>
+                                        <span className="text-3xl font-bold text-blue-600">€{amount ? amount.toFixed(2) : "-"}</span>
+                                        <span className="text-gray-600 ml-2">/{interval}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <h4 className="font-semibold text-gray-900 mb-3">Enthaltene Features:</h4>
-                                    {sessionData.metadata?.features
-                                        ? sessionData.metadata.features.split(",").map((feature, index) => (
+                                    {session.metadata?.features
+                                        ? session.metadata.features.split(",").map((feature, index) => (
                                             <div key={index} className="flex items-start">
                                                 <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

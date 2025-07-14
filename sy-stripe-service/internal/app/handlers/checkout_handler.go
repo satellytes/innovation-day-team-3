@@ -11,6 +11,7 @@ import (
 
 type CheckoutHandler struct {
 	Service *services.SubscriptionService
+	UserService *services.UserService
 	SuccessURL string
 	CancelURL  string
 }
@@ -24,8 +25,8 @@ type CheckoutSessionResponse struct {
 	SessionURL string `json:"sessionUrl"`
 }
 
-func NewCheckoutHandler(service *services.SubscriptionService, successURL, cancelURL string) *CheckoutHandler {
-	return &CheckoutHandler{Service: service, SuccessURL: successURL, CancelURL: cancelURL}
+func NewCheckoutHandler(service *services.SubscriptionService, userService *services.UserService, successURL, cancelURL string) *CheckoutHandler {
+	return &CheckoutHandler{Service: service, UserService: userService, SuccessURL: successURL, CancelURL: cancelURL}
 }
 
 func (h *CheckoutHandler) CreateCheckoutSessionHandler(c *gin.Context) {

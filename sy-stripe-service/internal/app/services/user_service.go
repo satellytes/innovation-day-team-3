@@ -45,3 +45,14 @@ func (s *UserService) CreateUser(ctx context.Context, email, name, stripeCustome
 	}
 	return s.Repo.CreateUser(ctx, user)
 }
+
+// UpsertUserByStripeCustomer creates or fetches a user by Stripe customer ID
+func (s *UserService) UpsertUserByStripeCustomer(ctx context.Context, email, name, stripeCustomerID string) (*models.User, error) {
+	user, err := s.Repo.GetUserByStripeCustomerID(ctx, stripeCustomerID)
+	if err == nil && user != nil {
+		return user, nil // user exists
+	}
+	// create new user
+	return s.CreateUser(ctx, email, name, stripeCustomerID)
+}
+

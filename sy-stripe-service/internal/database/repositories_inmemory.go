@@ -72,6 +72,25 @@ type InMemorySubscriptionRepository struct {
 	subscriptions  map[string]*models.Subscription // key: StripeSubscriptionID
 }
 
+// GetLatestSubscriptionByUserID returns the latest subscription (by created_at) for a user (in-memory)
+func (r *InMemorySubscriptionRepository) GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var latest *models.Subscription
+	for _, sub := range r.subscriptions {
+		if sub.UserID.String() == userID {
+			if latest == nil || sub.CreatedAt.After(latest.CreatedAt) {
+				latest = sub
+			}
+		}
+	}
+	if latest == nil {
+		return nil, fmt.Errorf("subscription not found")
+	}
+	return latest, nil
+}
+
+
 func (r *InMemorySubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"sy-stripe-service/internal/models"
 
@@ -120,6 +121,11 @@ func (h *StripeHandlers) CreateCustomerHandler(c *gin.Context) {
 	// 2. Persist user in DB
 	user, err := h.userService.CreateUser(c.Request.Context(), req.Email, req.Name, customer.ID)
 	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "duplicate user") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Der Benutzer oder die E-Mail existiert bereits."})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to persist user: %v", err)})
 		return
 	}

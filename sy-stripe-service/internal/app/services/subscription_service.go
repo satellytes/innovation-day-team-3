@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"os"
 	"time"
+	"log"
 	"github.com/google/uuid"
 	"sy-stripe-service/internal/database"
 	"sy-stripe-service/internal/models"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/checkout/session"
+	subpkg "github.com/stripe/stripe-go/v72/sub"
 )
 
 
@@ -38,9 +41,42 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, userID str
 }
 
 func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscriptionID string) error {
-	// TODO: Call Stripe API to cancel subscription (MVP: skip or mock)
-	// Update status in our database
-	return s.SubRepo.UpdateSubscriptionStatus(ctx, subscriptionID, "canceled")
+	log.Printf("[CancelSubscription] Called for subscriptionID: %s", subscriptionID)
+	sub, err := s.SubRepo.GetSubscriptionByID(ctx, subscriptionID)
+	if err != nil {
+		log.Printf("[CancelSubscription] Not found by internal ID, trying StripeSubscriptionID: %v", err)
+		sub, err = s.SubRepo.GetSubscriptionByStripeSubscriptionID(ctx, subscriptionID)
+		if err != nil {
+			log.Printf("[CancelSubscription] Error fetching subscription by StripeSubscriptionID: %v", err)
+			// Try to cancel directly on Stripe as fallback
+			log.Printf("[CancelSubscription] WARNING: Subscription not found in DB, attempting Stripe-only cancel for: %s", subscriptionID)
+			stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+			_, stripeErr := subpkg.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{})
+			if stripeErr != nil {
+				log.Printf("[CancelSubscription] Stripe direct cancel error: %v", stripeErr)
+				return stripeErr
+			}
+			log.Printf("[CancelSubscription] Stripe cancel succeeded for orphaned subscription: %s", subscriptionID)
+			// Don't update DB, just return success
+			return nil
+		}
+	}
+	log.Printf("[CancelSubscription] Subscription loaded: %+v", sub)
+	stripeSubID := sub.StripeSubscriptionID
+	if stripeSubID == "" {
+		log.Printf("[CancelSubscription] No StripeSubscriptionID, marking as canceled in DB only.")
+		return s.SubRepo.UpdateSubscriptionStatus(ctx, sub.ID.String(), "canceled")
+	}
+	// Cancel on Stripe
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	log.Printf("[CancelSubscription] Canceling on Stripe: %s", stripeSubID)
+	_, err = subpkg.Cancel(stripeSubID, &stripe.SubscriptionCancelParams{})
+	if err != nil {
+		log.Printf("[CancelSubscription] Stripe cancel error: %v", err)
+		return err
+	}
+	log.Printf("[CancelSubscription] Stripe cancel success, updating DB for %s", stripeSubID)
+	return s.SubRepo.UpdateSubscriptionStatus(ctx, stripeSubID, "canceled")
 }
 
 func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, stripeSubscriptionID string, status string, currentPeriodEnd time.Time, cancelAtPeriodEnd bool) error {
@@ -51,6 +87,11 @@ func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, stri
 // GetSubscriptionByID retrieves a subscription by its internal UUID
 func (s *SubscriptionService) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
 	return s.SubRepo.GetSubscriptionByID(ctx, id)
+}
+
+// GetLatestSubscriptionByUserID retrieves the latest subscription for a user
+func (s *SubscriptionService) GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error) {
+	return s.SubRepo.GetLatestSubscriptionByUserID(ctx, userID)
 }
 
 func (s *SubscriptionService) UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error) {

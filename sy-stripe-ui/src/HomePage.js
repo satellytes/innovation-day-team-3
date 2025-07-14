@@ -149,9 +149,9 @@ export default function HomePage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                          onClick={() => handleSimulate(user)}
+                          onClick={() => window.location.href = `/customers/${user.id}`}
                         >
-                          Simulate
+                          Einloggen
                         </button>
                       </td>
                     </tr>

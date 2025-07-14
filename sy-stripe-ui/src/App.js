@@ -1,6 +1,7 @@
 import React from 'react';
 import logo from './logo2.png'; // Webpack will resolve and bundle this
 import FaqSection from './FaqSection';
+import CancelPage from './CancelPage'; // Import CancelPage at the top
 
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
@@ -427,15 +428,9 @@ function App() {
             // Schritt 1: Erstelle Kunden
             // Für Demo-Zwecke verwenden wir Dummy-Daten
             // In einer echten App würden Sie diese Daten vom User abfragen
-            const customerData = await apiClient.createCustomer(
-                'demo@example.com', // In echter App: User-Input
-                'Demo User'         // In echter App: User-Input
-            );
-
-            // Schritt 2: Erstelle Checkout-Session
+            // Schritt 1: Erstelle Checkout-Session
             const checkoutData = await apiClient.createCheckoutSession(
-                priceId,
-                customerData.id
+                priceId
             );
 
             // Schritt 3: Weiterleitung zu Stripe Checkout oder Mock-Erfolg
@@ -494,11 +489,7 @@ function App() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 mb-6 sm:mb-8 leading-tight">
                         Unsere Abonnementpläne
                     </h1>
-                    {/* Salutation with customer name from localStorage */}
-                    {typeof window !== 'undefined' && localStorage.getItem('user_name') && (
-                        <div className="text-xl text-blue-700 mb-6 font-medium">{localStorage.getItem('user_name')} - Wähle Dein Abo!</div>
-                    )}
-                    
+
                     {/* Zahlungsintervall-Umschalter - nur anzeigen wenn Daten geladen */}
                     {!loading && !error && (
                         <PaymentToggle 

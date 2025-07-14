@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"sy-stripe-service/internal/config"
 	"sy-stripe-service/internal/database"
-	"sy-stripe-service/internal/app/handlers"
+
 )
 
 // Server holds the Gin router and database connection
@@ -22,7 +22,10 @@ func NewServer(db *database.DB, cfg *config.Config) *Server {
 	r := gin.Default()
 
 	// Register handlers
-	handlers.RegisterHealthRoutes(r)
+	// handlers.RegisterHealthRoutes(r)
+
+	// Register checkout session handler and dependencies
+	SetupCheckoutRoutes(r, db, cfg.AppSuccessURL, cfg.AppCancelURL)
 
 	return &Server{
 		Router: r,

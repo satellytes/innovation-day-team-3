@@ -114,6 +114,36 @@ type SQLiteSubscriptionRepository struct {
 	db *sql.DB
 }
 
+// GetLatestSubscriptionByUserID returns the latest subscription (by created_at) for a user (SQLite)
+func (r *SQLiteSubscriptionRepository) GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error) {
+	query := `SELECT id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, current_period_end, created_at, updated_at FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+	row := r.db.QueryRowContext(ctx, query, userID)
+	var s models.Subscription
+	var currentPeriodStartStr, currentPeriodEndStr, createdAtStr, updatedAtStr string
+	err := row.Scan(&s.ID, &s.UserID, &s.StripeSubscriptionID, &s.StripePriceID, &s.Status, &currentPeriodStartStr, &currentPeriodEndStr, &createdAtStr, &updatedAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("subscription not found: %w", err)
+	}
+	s.CurrentPeriodStart, err = parseAnyTime(currentPeriodStartStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse current_period_start: %w", err)
+	}
+	s.CurrentPeriodEnd, err = parseAnyTime(currentPeriodEndStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse current_period_end: %w", err)
+	}
+	s.CreatedAt, err = parseAnyTime(createdAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse created_at: %w", err)
+	}
+	s.UpdatedAt, err = parseAnyTime(updatedAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse updated_at: %w", err)
+	}
+	return &s, nil
+}
+
+
 func (r *SQLiteSubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
 	query := `SELECT id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, current_period_end, created_at, updated_at FROM subscriptions WHERE id = ?`
 	row := r.db.QueryRowContext(ctx, query, id)
