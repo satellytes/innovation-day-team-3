@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"github.com/gin-gonic/gin"
@@ -58,7 +59,16 @@ func (h *CheckoutHandler) CreateCheckoutSessionHandler(c *gin.Context) {
 		}
 		successURL = successURL + sep + "user_id=" + userIDPtr.String()
 	}
+	// Always ensure session_id placeholder is present
+	if !strings.Contains(successURL, "{CHECKOUT_SESSION_ID}") {
+		if strings.Contains(successURL, "?") {
+			successURL += "&session_id={CHECKOUT_SESSION_ID}"
+		} else {
+			successURL += "?session_id={CHECKOUT_SESSION_ID}"
+		}
+	}
 
+	fmt.Println("Stripe Success URL:", successURL)
 	session, err := h.Service.CreateCheckoutSession(req.PriceID, userIDPtr, successURL, h.CancelURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

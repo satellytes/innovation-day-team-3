@@ -235,15 +235,8 @@ const apiClient = {
 
             return await response.json();
         } catch (error) {
-            console.warn('Backend nicht erreichbar, simuliere Checkout-Session:', error);
-            // Mock-Antwort für Entwicklung - simuliert erfolgreiche Zahlung nach kurzer Verzögerung
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Simuliere erfolgreiche Zahlung (in echter App würde hier zu Stripe weitergeleitet)
-            return {
-                sessionUrl: '#mock-checkout-success',
-                sessionId: `cs_mock_${Date.now()}`
-            };
+            // Zeige einen klaren Fehler, wenn der Checkout-Session-Request fehlschlägt
+            throw new Error('Fehler beim Starten des Bezahlvorgangs. Bitte versuchen Sie es später erneut.');
         }
     }
 };

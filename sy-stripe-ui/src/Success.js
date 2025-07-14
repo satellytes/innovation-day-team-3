@@ -5,42 +5,65 @@ import logo from './logo2.png'; // Webpack will resolve and bundle this
  * Success-Seite nach erfolgreichem Checkout
  * Zeigt Benutzerinformationen, Produktdetails und Bestätigung an
  */
+import { useEffect, useState } from 'react';
+
 function Success() {
-    // URL-Parameter auslesen (falls von Stripe übergeben)
+    console.log("Success component rendered");
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
+    const [sessionData, setSessionData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Mock-Daten für Demo-Zwecke
-    // In einer echten App würden diese Daten vom Backend basierend auf der session_id geladen
-    const orderData = {
-        user: {
-            name: 'Demo User',
-            email: 'demo@example.com'
-        },
-        product: {
-            name: 'Premium Plan',
-            price: 39.99,
-            interval: 'monatlich',
-            features: [
-                'Unbegrenzte Projekte',
-                '1 TB Speicherplatz',
-                '24/7 Premium Support',
-                'Vollständige Analytics Suite',
-                'Erweiterte Team-Features',
-                'White-Label Optionen'
-            ]
-        },
-        order: {
-            id: sessionId || 'demo_order_123',
-            date: new Date().toLocaleDateString('de-DE'),
-            total: 39.99
+    useEffect(() => {
+        if (!sessionId) {
+            setError('Keine Session-ID in der URL gefunden.');
+            setLoading(false);
+            return;
         }
-    };
+        console.log("Fetching session:", sessionId);
+        fetch(`http://localhost:8080/api/v1/checkout-session/${sessionId}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Fehler beim Laden der Session-Daten.');
+                return res.json();
+            })
+            .then(data => {
+                console.log("Session fetch result:", data);
+                setSessionData(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
+    }, [sessionId]);
 
     const handleBackToHome = () => {
         window.location.href = '/';
     };
 
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-gray-600 text-lg">Lade Bestelldaten...</div>
+            </div>
+        );
+    }
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-red-600 text-lg font-semibold">{error}</div>
+            </div>
+        );
+    }
+
+    // Stripe session data fields (fallback to raw JSON if unsure)
+    const customerEmail = sessionData.customer_details?.email || sessionData.customer_email || 'Unbekannt';
+    const amount = (sessionData.amount_total ? sessionData.amount_total / 100 : null) || (sessionData.display_items?.[0]?.amount / 100) || null;
+    const currency = sessionData.currency || 'eur';
+    const productName = sessionData.metadata?.product_name || sessionData.display_items?.[0]?.custom?.name || 'Produkt';
+    const interval = sessionData.metadata?.interval || 'monatlich';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -91,11 +114,11 @@ function Success() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Name:</span>
-                                            <span className="font-medium text-gray-900">{orderData.user.name}</span>
+                                            <span className="font-medium text-gray-900">{sessionData.customer_details?.name || sessionData.customer_name || "Unbekannt"}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">E-Mail:</span>
-                                            <span className="font-medium text-gray-900">{orderData.user.email}</span>
+                                            <span className="font-medium text-gray-900">{sessionData.customer_details?.email || sessionData.customer_email || "Unbekannt"}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -111,15 +134,15 @@ function Success() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Bestell-ID:</span>
-                                            <span className="font-medium text-gray-900 font-mono text-sm">{orderData.order.id}</span>
+                                            <span className="font-medium text-gray-900 font-mono text-sm">{sessionData.id || "-"}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Datum:</span>
-                                            <span className="font-medium text-gray-900">{orderData.order.date}</span>
+                                            <span className="font-medium text-gray-900">{sessionData.created ? new Date(sessionData.created * 1000).toLocaleString() : "-"}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Gesamtbetrag:</span>
-                                            <span className="font-bold text-gray-900 text-lg">€{orderData.order.total.toFixed(2)}</span>
+                                            <span className="font-bold text-gray-900 text-lg">€{sessionData.amount_total ? (sessionData.amount_total / 100).toFixed(2) : "-"} {sessionData.currency ? sessionData.currency.toUpperCase() : ""}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -135,23 +158,26 @@ function Success() {
                                 </h2>
                                 
                                 <div className="mb-4">
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{orderData.product.name}</h3>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{sessionData.metadata?.product_name || sessionData.display_items?.[0]?.custom?.name || "Produkt"}</h3>
                                     <div className="flex items-baseline mb-4">
-                                        <span className="text-3xl font-bold text-blue-600">€{orderData.product.price}</span>
-                                        <span className="text-gray-600 ml-2">/{orderData.product.interval}</span>
+                                        <span className="text-3xl font-bold text-blue-600">€{sessionData.amount_total ? (sessionData.amount_total / 100).toFixed(2) : "-"}</span>
+                                        <span className="text-gray-600 ml-2">/{sessionData.metadata?.interval || "monatlich"}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <h4 className="font-semibold text-gray-900 mb-3">Enthaltene Features:</h4>
-                                    {orderData.product.features.map((feature, index) => (
-                                        <div key={index} className="flex items-start">
-                                            <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                            <span className="text-gray-700">{feature}</span>
-                                        </div>
-                                    ))}
+                                    {sessionData.metadata?.features
+                                        ? sessionData.metadata.features.split(",").map((feature, index) => (
+                                            <div key={index} className="flex items-start">
+                                                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="text-gray-700">{feature}</span>
+                                            </div>
+                                        ))
+                                        : <span className="text-gray-500">Keine Feature-Liste verfügbar.</span>
+                                    }
                                 </div>
                             </div>
                         </div>

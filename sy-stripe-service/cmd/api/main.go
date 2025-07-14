@@ -123,6 +123,7 @@ func main() {
 		v1.POST("/subscriptions/create", stripeHandlers.CreateSubscriptionHandler)
 		v1.GET("/products", productHandler.GetProductsHandler)
 		v1.POST("/checkout-session", checkoutHandler.CreateCheckoutSessionHandler)
+	v1.GET("/checkout-session/:id", checkoutHandler.GetCheckoutSessionHandler)
 	}
 
 	// Start HTTP server
