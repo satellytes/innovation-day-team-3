@@ -45,7 +45,7 @@ export default function HomePage() {
         if (!res.ok) throw new Error('Failed to load users');
         return res.json();
       })
-      .then(setUsers)
+      .then(data => setUsers(Array.isArray(data) ? data : []))
       .catch(setError)
       .finally(() => setLoading(false));
   }, []);
@@ -134,21 +134,29 @@ export default function HomePage() {
                     </td>
                   </tr>
                 )}
-                {users.map(user => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.stripe_customer_id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                        onClick={() => handleSimulate(user)}
-                      >
-                        Simulate
-                      </button>
+                {users.length === 0 && !showAddRow ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-400 italic">
+                      Keine Kunden gefunden.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  users.map(user => (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.stripe_customer_id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                          onClick={() => handleSimulate(user)}
+                        >
+                          Simulate
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           )}

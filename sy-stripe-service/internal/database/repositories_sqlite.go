@@ -68,7 +68,7 @@ func (r *SQLiteUserRepository) GetUserByStripeCustomerID(ctx context.Context, cu
 	row := r.db.QueryRowContext(ctx, query, customerID)
 	var u models.User
 	var createdAtStr, updatedAtStr string
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &createdAtStr, &updatedAtStr)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &createdAtStr, &updatedAtStr)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
