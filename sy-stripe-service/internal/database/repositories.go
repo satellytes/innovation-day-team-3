@@ -53,7 +53,7 @@ func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*m
 	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE id = $1`
 	row := r.pool.QueryRow(ctx, query, id)
 	var u models.User
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
