@@ -1,5 +1,6 @@
 import React from 'react';
 import logo from './logo2.png'; // Webpack will resolve and bundle this
+import FaqSection from './FaqSection';
 
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
@@ -306,9 +307,14 @@ function SubscriptionCard({ plan, isMonthly, isSelected, onSelect }) {
             isSelected 
                 ? 'bg-blue-50 border-2 border-blue-500 ring-2 ring-blue-200' 
                 : 'bg-white border-2 border-gray-200 hover:border-gray-300'
-        }`}>
+        } ${plan.id === 'prod_basic' ? 'animate-bounce-slow border-4 border-yellow-400 relative z-10' : ''}`}>
             {/* Header mit Plan-Name und Preis */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 relative">
+                {plan.id === 'prod_basic' && (
+                    <span className="badge-popular absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 text-base animate-pulse shadow-lg z-30">
+                        ⭐ Beliebtester Plan
+                    </span>
+                )}
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
                     {plan.name}
                 </h3>
@@ -490,14 +496,7 @@ function App() {
             <div className="max-w-7xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
                 {/* Header-Bereich */}
                 <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-                    {/* Logo */}
-                    <div className="mb-6 sm:mb-8">
-                        <img 
-                            src={logo} 
-                            alt="Logo" 
-                            className="mx-auto h-16 sm:h-20 lg:h-24 w-auto"
-                        />
-                    </div>
+
                     
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 mb-6 sm:mb-8 leading-tight">
                         Unsere Abonnementpläne
@@ -566,6 +565,9 @@ function App() {
                     </div>
                 )}
             </div>
+
+            {/* FAQ unterhalb der Abonnementkarten */}
+            <FaqSection />
 
             {/* Payment Status Modal - Overlay für Zahlungsfeedback */}
             {paymentStatus !== 'idle' && (
