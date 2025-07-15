@@ -63,7 +63,7 @@ export default function Customers() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 md:py-20">
       <img src={logo} alt="Logo" className="h-16 mb-6" />
       <h2 className="text-2xl font-bold mb-2">Kundenübersicht</h2>
       {loading ? (
@@ -72,73 +72,36 @@ export default function Customers() {
         <div className="text-red-500">{error}</div>
       ) : (
         <>
-          <button
-            className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={() => setShowAddRow(true)}
-          >
-            + Kunde anlegen
-          </button>
-          {showAddRow && (
-            <div className="mb-4 flex gap-2 items-center">
-              <input
-                type="text"
-                placeholder="Name"
-                value={newCustomer.name}
-                onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                className="border p-2 rounded"
-              />
-              <input
-                type="email"
-                placeholder="E-Mail"
-                value={newCustomer.email}
-                onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                className="border p-2 rounded"
-              />
-              <button
-                onClick={handleSaveNewCustomer}
-                className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                disabled={addingCustomer}
-              >
-                Speichern
-              </button>
-              <button
-                onClick={() => setShowAddRow(false)}
-                className="px-3 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-              >
-                Abbrechen
-              </button>
-              {addError && <span className="text-red-500 ml-2">{addError}</span>}
-            </div>
-          )}
-          <div className="w-full max-w-4xl bg-white rounded shadow p-4">
-            <table className="min-w-full">
-              <thead>
-                <tr>
-                  <th className="py-2 text-left">Name</th>
-                  <th className="py-2 text-left">E-Mail</th>
-                  <th className="py-2 text-left">Stripe Customer ID</th>
-                  <th className="py-2 text-left">Aktion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.id} className="border-t">
-                    <td className="py-2">{user.name}</td>
-                    <td className="py-2">{user.email}</td>
-                    <td className="py-2">{user.stripe_customer_id}</td>
-                    <td className="py-2">
-                      <button
-                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        onClick={() => handleGoToProfile(user)}
-                      >
-                        Profil anzeigen
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-8 mt-6">
+  <table className="min-w-full">
+    <thead>
+      <tr>
+        <th className="py-4 px-6 text-left text-base font-semibold text-gray-600">Name</th>
+        <th className="py-4 px-6 text-left text-base font-semibold text-gray-600">E-Mail</th>
+        <th className="py-4 px-6 text-left text-base font-semibold text-gray-600">Stripe Customer ID</th>
+        <th className="py-4 px-6 text-left text-base font-semibold text-gray-600">Aktion</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map(user => (
+        <tr key={user.id} className="border-t hover:bg-blue-50 transition-colors">
+          <td className="py-4 px-6 align-middle">{user.name}</td>
+          <td className="py-4 px-6 align-middle">{user.email}</td>
+          <td className="py-4 px-6 align-middle">{user.stripe_customer_id}</td>
+          <td className="py-4 px-6 align-middle">
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition"
+              onClick={() => handleGoToProfile(user)}
+            >
+              Profil anzeigen
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
         </>
       )}
     </div>

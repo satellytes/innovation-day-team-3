@@ -95,10 +95,6 @@ body, html {
   display: inline-block;
 }
 
-
-
-
-
 @font-face {
   font-family: 'Coco Gothic';
   src: url('./fonts/CocoGothic.woff2') format('woff2'),
@@ -118,6 +114,7 @@ body, html {
   inset: 0;
   z-index: 0;
   background: url('./logo2.png') center center no-repeat;
+  background-color: #281382;
   background-size: 100%;
   opacity: 0.04;
   pointer-events: none;

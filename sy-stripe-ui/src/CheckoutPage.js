@@ -5,6 +5,7 @@ import { createCheckoutSession } from './api/subscriptions';
 import PaymentToggle from './PaymentToggle';
 import SubscriptionCard from './SubscriptionCard';
 import FaqSection from './FaqSection';
+import './styles.css';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
@@ -138,6 +139,29 @@ function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+      {/* Floating Customer List Button */}
+      <a
+        href="/customers"
+        className="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 transition-all group"
+        title="Kundenübersicht"
+        style={{ boxShadow: '0 4px 24px rgba(30,64,175,0.18)' }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-8 h-8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M17.25 18.75V17.25A2.25 2.25 0 0015 15h-6a2.25 2.25 0 00-2.25 2.25v1.5M12 11.25a3 3 0 100-6 3 3 0 000 6zm6.75 6v-1.5A4.5 4.5 0 0014.25 11h-4.5A4.5 4.5 0 003.75 15.75v1.5"
+          />
+        </svg>
+        <span className="absolute opacity-0 group-hover:opacity-100 bg-black text-white text-xs rounded px-2 py-1 pointer-events-none -top-10 left-1/2 -translate-x-1/2 transition-opacity">Kundenübersicht</span>
+      </a>
       <img src={logo} alt="Logo" className="h-16 mb-6" />
       <h2 className="text-2xl font-bold mb-2">Wähle einen Plan</h2>
 
@@ -147,7 +171,9 @@ function CheckoutPage() {
         <div className="text-red-500">{error}</div>
       ) : (
         <>
-          <PaymentToggle isMonthly={isMonthly} onToggle={setIsMonthly} plans={plans} />
+          <div className="mb-8">
+            <PaymentToggle isMonthly={isMonthly} onToggle={setIsMonthly} plans={plans} />
+          </div>
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 w-full max-w-5xl mb-8">
             {plans.map(plan => (
               <SubscriptionCard
