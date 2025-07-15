@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"time"
+	"fmt"
 	"log"
 	"github.com/google/uuid"
 	"sy-stripe-service/internal/database"
@@ -57,7 +58,6 @@ func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscripti
 				return stripeErr
 			}
 			log.Printf("[CancelSubscription] Stripe cancel succeeded for orphaned subscription: %s", subscriptionID)
-			// Don't update DB, just return success
 			return nil
 		}
 	}
@@ -72,12 +72,13 @@ func (s *SubscriptionService) CancelSubscription(ctx context.Context, subscripti
 	log.Printf("[CancelSubscription] Canceling on Stripe: %s", stripeSubID)
 	_, err = subpkg.Cancel(stripeSubID, &stripe.SubscriptionCancelParams{})
 	if err != nil {
-		log.Printf("[CancelSubscription] Stripe cancel error: %v", err)
-		return err
+		log.Printf("[CancelSubscription] ERROR: Stripe cancel failed, NOT updating DB. Error: %v", err)
+		return err // Do not update DB if Stripe cancel fails
 	}
 	log.Printf("[CancelSubscription] Stripe cancel success, updating DB for %s", stripeSubID)
 	return s.SubRepo.UpdateSubscriptionStatus(ctx, stripeSubID, "canceled")
 }
+
 
 func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, stripeSubscriptionID string, status string, currentPeriodEnd time.Time, cancelAtPeriodEnd bool) error {
 	// Placeholder: Update status in DB and (later) Stripe
@@ -99,7 +100,18 @@ func (s *SubscriptionService) UpdateSubscription(ctx context.Context, sub *model
 }
 
 // CreateCheckoutSession creates a Stripe Checkout Session for a subscription.
-func (s *SubscriptionService) CreateCheckoutSession(priceID string, userID *uuid.UUID, successURL, cancelURL string) (*stripe.CheckoutSession, error) {
+func (s *SubscriptionService) CreateCheckoutSession(priceID string, userID *uuid.UUID, customerId, successURL, cancelURL string) (*stripe.CheckoutSession, error) {
+	// Cancel the user's active subscription before creating a new one (plan change)
+	if userID != nil {
+		// Find latest subscription for user
+		latestSub, err := s.GetLatestSubscriptionByUserID(context.Background(), userID.String())
+		if err == nil && latestSub != nil && latestSub.StripeSubscriptionID != "" && latestSub.Status != "canceled" {
+			cancelErr := s.CancelSubscription(context.Background(), latestSub.StripeSubscriptionID)
+			if cancelErr != nil {
+				return nil, fmt.Errorf("failed to cancel old subscription: %w", cancelErr)
+			}
+		}
+	}
 	params := &stripe.CheckoutSessionParams{
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		SuccessURL: stripe.String(successURL),
@@ -112,8 +124,10 @@ func (s *SubscriptionService) CreateCheckoutSession(priceID string, userID *uuid
 		},
 	}
 
-	// Add user/customer if userID provided
-	if userID != nil {
+	// Prefer explicit Stripe customerId if provided
+	if customerId != "" {
+		params.Customer = stripe.String(customerId)
+	} else if userID != nil {
 		user, err := s.UserRepo.GetUserByStripeCustomerID(context.Background(), userID.String())
 		if err == nil && user.StripeCustomerID != "" {
 			params.Customer = stripe.String(user.StripeCustomerID)

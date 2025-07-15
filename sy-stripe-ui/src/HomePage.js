@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from './logo2.png';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,7 +57,7 @@ export default function HomePage() {
     localStorage.setItem('user_email', user.email);
     localStorage.setItem('stripe_customer_id', user.stripe_customer_id);
     localStorage.setItem('user_name', user.name || '');
-    window.location.href = '/checkout';
+    navigate('/checkout', { state: { userId: user.id, stripeCustomerId: user.stripe_customer_id } });
   };
 
   return (

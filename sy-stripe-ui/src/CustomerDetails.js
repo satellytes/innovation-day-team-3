@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from 'react';
+import ConfirmModal from './ConfirmModal';
+import SuccessModal from './SuccessModal';
 import { useParams, useNavigate } from 'react-router-dom';
 import logo from './logo2.png';
+import { createCheckoutSession, cancelSubscription } from './api/subscriptions';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export default function CustomerDetails() {
+  React.useEffect(() => {
+    document.title = 'Satellytes – Kundendetails';
+  }, []);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);
@@ -108,6 +116,7 @@ export default function CustomerDetails() {
                 </div>
                 <div className="mb-2"><span className="font-semibold">Status:</span> <span className="capitalize">{subscription.status}</span></div>
                 <div className="mb-2"><span className="font-semibold">Läuft bis:</span> {subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toLocaleDateString() : '-'}</div>
+
               </div>
             ) : (
               <div className="mt-8 flex items-center">
@@ -121,7 +130,7 @@ export default function CustomerDetails() {
             )}
           </div>
         </div>
-        {/* Actions: Logout & Cancel Plan */}
+        {/* Actions: Logout, Cancel, Change/Re-add Plan */}
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <button
             onClick={() => {
@@ -132,22 +141,38 @@ export default function CustomerDetails() {
           >
             Logout
           </button>
-          {subscription && (
+          {subscription && subscription.status !== 'canceled' ? (
+            <>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Abo kündigen
+              </button>
+              <ConfirmModal
+                open={showCancelModal}
+                title="Abo kündigen?"
+                description="Möchtest du dein Abonnement wirklich kündigen? Diese Aktion kann nicht rückgängig gemacht werden."
+                confirmText="Ja, kündigen"
+                cancelText="Abbrechen"
+                onCancel={() => setShowCancelModal(false)}
+                onConfirm={async () => {
+                  setShowCancelModal(false);
+                  try {
+                    await cancelSubscription(subscription.stripe_subscription_id);
+                    setShowSuccessModal(true);
+                  } catch (e) {
+                    alert('Kündigung fehlgeschlagen: ' + (e.message || e));
+                  }
+                }}
+              />
+            </>
+          ) : (
             <button
-              onClick={async () => {
-                if (!window.confirm('Möchtest du dein Abonnement wirklich kündigen?')) return;
-                try {
-                  const { cancelSubscription } = await import('./api/subscriptions');
-                  await cancelSubscription(subscription.stripe_subscription_id);
-                  alert('Dein Abonnement wurde gekündigt.');
-                  window.location.reload();
-                } catch (e) {
-                  alert('Kündigung fehlgeschlagen: ' + (e.message || e));
-                }
-              }}
-              className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              onClick={() => navigate('/', { state: { userId: user.id, stripeCustomerId: user.stripe_customer_id } })}
+              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
             >
-              Abo kündigen
+              Abo auswählen
             </button>
           )}
           <button
@@ -158,6 +183,13 @@ export default function CustomerDetails() {
           </button>
         </div>
       </div>
+      <SuccessModal
+        open={showSuccessModal}
+        title="Abo gekündigt!"
+        description="Dein Abonnement wurde erfolgreich gekündigt."
+        buttonText="OK"
+        onClose={() => window.location.reload()}
+      />
     </div>
   );
 }

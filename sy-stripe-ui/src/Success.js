@@ -227,13 +227,21 @@ function Success() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="mt-8 flex justify-center">
+                        <div className="mt-8 flex justify-center gap-4">
                             <button
                                 onClick={handleBackToHome}
                                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                             >
                                 Zurück zur Startseite
                             </button>
+                            {user.id ? (
+                                <button
+                                    onClick={() => window.location.href = `/customers/${user.id}`}
+                                    className="bg-gray-700 text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                                >
+                                    Zum Kundenprofil
+                                </button>
+                            ) : null}
                         </div>
                     </div>
                 </div>

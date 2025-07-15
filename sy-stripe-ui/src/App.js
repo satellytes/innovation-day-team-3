@@ -217,7 +217,7 @@ const apiClient = {
      * @param {string} userId - User ID vom erstellten Kunden
      * @returns {Promise<Object>} - Session-Daten mit sessionUrl
      */
-    async createCheckoutSession(priceId, userId) {
+    async createCheckoutSession(priceId, userId, stripeCustomerId) {
         try {
             const response = await fetch(`${API_BASE_URL}/checkout-session`, {
                 method: 'POST',
@@ -226,7 +226,8 @@ const apiClient = {
                 },
                 body: JSON.stringify({
                     priceId: priceId,
-                    userId: userId
+                    userId: userId,
+                    customerId: stripeCustomerId || undefined
                 })
             });
 
@@ -361,7 +362,10 @@ function SubscriptionCard({ plan, isMonthly, isSelected, onSelect }) {
 /**
  * Haupt-App Komponente - Verwaltet den gesamten Anwendungszustand
  */
+import { useLocation } from 'react-router-dom';
+
 function App() {
+    const location = useLocation();
     // Zustandsverwaltung für die Anwendung
     const [isMonthly, setIsMonthly] = React.useState(true); // Zahlungsintervall (monatlich/jährlich)
     const [selectedPlanId, setSelectedPlanId] = React.useState(null); // ID des ausgewählten Plans
@@ -369,6 +373,9 @@ function App() {
     const [subscriptionPlans, setSubscriptionPlans] = React.useState([]); // Produktdaten vom Backend
     const [loading, setLoading] = React.useState(true); // Ladezustand für Produktdaten
     const [error, setError] = React.useState(null); // Fehlerzustand
+
+    // Get stripeCustomerId from state or query param
+    const stripeCustomerId = location.state?.stripeCustomerId || new URLSearchParams(window.location.search).get('stripeCustomerId');
 
     /**
      * Lädt Produktdaten beim ersten Rendern
@@ -425,12 +432,11 @@ function App() {
                 throw new Error('Preis-ID nicht verfügbar');
             }
 
-            // Schritt 1: Erstelle Kunden
-            // Für Demo-Zwecke verwenden wir Dummy-Daten
-            // In einer echten App würden Sie diese Daten vom User abfragen
-            // Schritt 1: Erstelle Checkout-Session
+            // Schritt 1: Erstelle Checkout-Session (nutze ggf. Stripe Customer ID)
             const checkoutData = await apiClient.createCheckoutSession(
-                priceId
+                priceId,
+                null,
+                stripeCustomerId || undefined
             );
 
             // Schritt 3: Weiterleitung zu Stripe Checkout oder Mock-Erfolg
@@ -452,6 +458,7 @@ function App() {
             throw error;
         }
     };
+
 
     /**
      * Handler für die Planauswahl und Zahlungsinitiierung
