@@ -1,6 +1,5 @@
-// import React from 'react';
-// import logo from './logo.png';
-const logo = './src/logo.png'; // Pfad zum Logo
+import React from 'react';
+import logo from './logo2.png'; // Webpack will resolve and bundle this
 
 /**
  * Cancel-Seite nach abgebrochenem Checkout
@@ -161,5 +160,4 @@ function Cancel() {
     );
 }
 
-// export default Cancel;
-window.Cancel = Cancel; // Globale Variable für Browser
+export default Cancel;

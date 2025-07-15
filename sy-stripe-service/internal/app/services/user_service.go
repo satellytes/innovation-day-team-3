@@ -33,14 +33,26 @@ func NewUserService(repo database.UserRepository) *UserService {
 	return &UserService{Repo: repo}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, email string, stripeCustomerID string) (*models.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, email, name, stripeCustomerID string) (*models.User, error) {
 	id := uuid.New()
 	user := &models.User{
 		ID: id,
 		Email: email,
+		Name: name,
 		StripeCustomerID: stripeCustomerID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 	return s.Repo.CreateUser(ctx, user)
 }
+
+// UpsertUserByStripeCustomer creates or fetches a user by Stripe customer ID
+func (s *UserService) UpsertUserByStripeCustomer(ctx context.Context, email, name, stripeCustomerID string) (*models.User, error) {
+	user, err := s.Repo.GetUserByStripeCustomerID(ctx, stripeCustomerID)
+	if err == nil && user != nil {
+		return user, nil // user exists
+	}
+	// create new user
+	return s.CreateUser(ctx, email, name, stripeCustomerID)
+}
+

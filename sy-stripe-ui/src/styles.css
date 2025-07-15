@@ -1,3 +1,136 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.bg-white-50 {
+  background-color: rgba(255,255,255,0.3) !important;
+  backdrop-filter: blur(8px);
+}
+
+
+.font-gagalin {
+  font-family: 'Gagalin', cursive, 'Luckiest Guy', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+
+.font-luckiest {
+  font-family: 'Luckiest Guy', cursive !important;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+
+body, html {
+  background-color: #ffcccc; /* TEST: Sollte jetzt rosa erscheinen */
+  background-repeat: no-repeat;
+  background-position: center 180px;
+  background-size: 400px auto;
+
+  font-family: 'Coco Gothic', sans-serif !important;
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  /* Custom font classes */
+  .font-oswald {
+    font-family: 'Oswald', Arial, Helvetica, sans-serif !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--koenigsblau, #2743a6);
+  }
+  .text-koenigsblau {
+    color: var(--koenigsblau, #2743a6) !important;
+  }
+  .btn-koenigsblau {
+    background-color: var(--koenigsblau, #2743a6) !important;
+    color: #fff !important;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .btn-koenigsblau:hover {
+    background-color: #193080 !important;
+  }
+  .btn-koenigsblau:active {
+    background-color: #101e4e !important;
+  }
+  /* Glow-Layer */
+  background: linear-gradient(180deg, #f5faff 0%, #e6edfa 60%, #fff 100%);
+  background-color: #fff;
+
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+
+.font-sans {
+  font-family: 'Coco Gothic', sans-serif !important;
+}
+
+
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.card-hover:hover {
+  transform: scale(1.045) translateY(-4px);
+  box-shadow: 0 8px 32px 0 rgba(39,67,166,0.15), 0 1.5px 3px 0 rgba(0,0,0,0.03);
+  z-index: 2;
+}
+
+.badge-popular {
+  background: linear-gradient(90deg,#2743a6 60%,#3b82f6 100%);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.25em 0.9em;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 3px #e6edfa, 0 4px 16px 0 rgba(39,67,166,0.13);
+  letter-spacing: 0.04em;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+@font-face {
+  font-family: 'Coco Gothic';
+  src: url('./fonts/CocoGothic.woff2') format('woff2'),
+       url('./fonts/CocoGothic.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-coco {
+  font-family: 'Coco Gothic', sans-serif !important;
+}
+
+
+.background-logo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: url('./logo2.png') center center no-repeat;
+  background-color: #281382;
+  background-size: 100%;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8,0,1,1);
+  }
+  50% {
+    transform: translateY(-16px);
+    animation-timing-function: cubic-bezier(0,0,0.2,1);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2.3s infinite;
+}

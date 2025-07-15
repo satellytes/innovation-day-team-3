@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/lib/pq"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,8 @@ type SubscriptionRepository interface {
 	GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error)
 	UpdateSubscriptionStatus(ctx context.Context, subID string, status string) error
 	UpdateSubscription(ctx context.Context, sub *models.Subscription) (*models.Subscription, error)
+	// NEW: Get the latest subscription by user ID
+	GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error)
 }
 
 func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
@@ -53,7 +56,7 @@ func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*m
 	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE id = $1`
 	row := r.pool.QueryRow(ctx, query, id)
 	var u models.User
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
@@ -70,6 +73,9 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *models.Us
 	var u models.User
 	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return nil, fmt.Errorf("duplicate user: %w", err)
+		}
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}
 	return &u, nil
@@ -79,7 +85,7 @@ func (r *PostgresUserRepository) GetUserByStripeCustomerID(ctx context.Context, 
 	query := `SELECT id, stripe_customer_id, email, name, created_at, updated_at FROM users WHERE stripe_customer_id = $1`
 	row := r.pool.QueryRow(ctx, query, customerID)
 	var u models.User
-	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.StripeCustomerID, &u.Email, &u.Name, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
@@ -89,6 +95,19 @@ func (r *PostgresUserRepository) GetUserByStripeCustomerID(ctx context.Context, 
 // PostgresSubscriptionRepository implements SubscriptionRepository.
 type PostgresSubscriptionRepository struct {
 	pool *pgxpool.Pool
+}
+
+// GetLatestSubscriptionByUserID returns the latest subscription (by created_at) for a user
+func (r *PostgresSubscriptionRepository) GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error) {
+	query := `SELECT id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, current_period_end, created_at, updated_at
+		FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`
+	row := r.pool.QueryRow(ctx, query, userID)
+	var s models.Subscription
+	err := row.Scan(&s.ID, &s.UserID, &s.StripeSubscriptionID, &s.StripePriceID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("subscription not found: %w", err)
+	}
+	return &s, nil
 }
 
 func (r *PostgresSubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {

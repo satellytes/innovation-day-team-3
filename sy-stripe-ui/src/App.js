@@ -1,16 +1,93 @@
-// import React from 'react';
-// import logo from './logo.png';
-const logo = './src/logo.png'; // Pfad zum Logo
+import React from 'react';
+import logo from './logo2.png'; // Webpack will resolve and bundle this
+import FaqSection from './FaqSection';
+import CancelPage from './CancelPage'; // Import CancelPage at the top
 
 // API-Konfiguration
 const API_BASE_URL = 'http://localhost:8080/api/v1';
+
+// Mock-Daten für Entwicklung ohne Backend
+const MOCK_PRODUCTS = [
+    {
+        id: 'prod_basic',
+        name: 'Basic Plan',
+        description: 'Perfekt für Einsteiger',
+        active: true,
+        prices: [
+            {
+                id: 'price_basic_monthly',
+                nickname: 'Basic Monthly',
+                unit_amount: 999, // 9.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_basic_yearly',
+                nickname: 'Basic Yearly',
+                unit_amount: 9990, // 99.90 EUR in Cent (entspricht 8.33 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    },
+    {
+        id: 'prod_pro',
+        name: 'Pro Plan',
+        description: 'Für professionelle Nutzer',
+        active: true,
+        prices: [
+            {
+                id: 'price_pro_monthly',
+                nickname: 'Pro Monthly',
+                unit_amount: 1999, // 19.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_pro_yearly',
+                nickname: 'Pro Yearly',
+                unit_amount: 19990, // 199.90 EUR in Cent (entspricht 16.66 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    },
+    {
+        id: 'prod_enterprise',
+        name: 'Enterprise Plan',
+        description: 'Für große Unternehmen',
+        active: true,
+        prices: [
+            {
+                id: 'price_enterprise_monthly',
+                nickname: 'Enterprise Monthly',
+                unit_amount: 4999, // 49.99 EUR in Cent
+                currency: 'eur',
+                interval: 'month',
+                created: Date.now()
+            },
+            {
+                id: 'price_enterprise_yearly',
+                nickname: 'Enterprise Yearly',
+                unit_amount: 49990, // 499.90 EUR in Cent (entspricht 41.66 EUR/Monat)
+                currency: 'eur',
+                interval: 'year',
+                created: Date.now()
+            }
+        ]
+    }
+];
 
 /**
  * API-Client für Backend-Kommunikation
  */
 const apiClient = {
     /**
-     * Lädt Produktdaten vom Backend
+     * Lädt Produktdaten vom Backend oder verwendet Mock-Daten als Fallback
      * @returns {Promise<Array>} - Array von Produkten mit Preisen
      */
     async getProducts() {
@@ -22,41 +99,83 @@ const apiClient = {
             const products = await response.json();
             
             // Transformiere Backend-Daten in Frontend-Format
-            return products.map(product => {
-                // Finde monatliche und jährliche Preise
-                const monthlyPrice = product.prices.find(p => p.interval === 'month');
-                const yearlyPrice = product.prices.find(p => p.interval === 'year');
-                
-                // Berechne Rabatt für jährliche Zahlung
-                const yearlyDiscountPercentage = monthlyPrice && yearlyPrice 
-                    ? Math.round((1 - (yearlyPrice.unit_amount / 100) / (monthlyPrice.unit_amount / 100 * 12)) * 100)
-                    : 0;
-                
-                return {
-                    id: product.id,
-                    name: product.name,
-                    description: product.description,
-                    monthlyPrice: monthlyPrice ? monthlyPrice.unit_amount / 100 : 0,
-                    yearlyPrice: yearlyPrice ? yearlyPrice.unit_amount / 100 : 0,
-                    yearlyDiscountPercentage,
-                    monthlyPriceId: monthlyPrice?.id,
-                    yearlyPriceId: yearlyPrice?.id,
-                    features: [
-                        // Fallback-Features, da Stripe keine Feature-Liste hat
-                        'Alle Grundfunktionen',
-                        'E-Mail Support',
-                        'Monatliche Updates'
-                    ]
-                };
-            });
+            return this.transformProductData(products);
         } catch (error) {
-            console.error('Fehler beim Laden der Produkte:', error);
-            throw error;
+            console.warn('Backend nicht erreichbar, verwende Mock-Daten:', error);
+            // Fallback auf Mock-Daten für Entwicklung
+            return this.transformProductData(MOCK_PRODUCTS);
         }
     },
 
     /**
-     * Erstellt einen neuen Kunden in Stripe
+     * Transformiert Produktdaten in das Frontend-Format
+     * @param {Array} products - Rohe Produktdaten
+     * @returns {Array} - Transformierte Produktdaten
+     */
+    transformProductData(products) {
+        return products.map(product => {
+            // Finde monatliche und jährliche Preise
+            const monthlyPrice = product.prices.find(p => p.interval === 'month');
+            const yearlyPrice = product.prices.find(p => p.interval === 'year');
+            
+            // Berechne Rabatt für jährliche Zahlung
+            const yearlyDiscountPercentage = monthlyPrice && yearlyPrice 
+                ? Math.round((1 - (yearlyPrice.unit_amount / 100) / (monthlyPrice.unit_amount / 100 * 12)) * 100)
+                : 0;
+            
+            // Definiere Features basierend auf dem Plan
+            let features = [];
+            if (product.name.toLowerCase().includes('basic')) {
+                features = [
+                    'Bis zu 5 Projekte',
+                    'E-Mail Support',
+                    'Grundlegende Analytics',
+                    'Mobile App Zugang'
+                ];
+            } else if (product.name.toLowerCase().includes('pro')) {
+                features = [
+                    'Unbegrenzte Projekte',
+                    'Prioritäts-Support',
+                    'Erweiterte Analytics',
+                    'API Zugang',
+                    'Team Kollaboration',
+                    'Export Funktionen'
+                ];
+            } else if (product.name.toLowerCase().includes('enterprise')) {
+                features = [
+                    'Alles aus Pro Plan',
+                    'Dedicated Account Manager',
+                    'Custom Integrationen',
+                    'SLA Garantie',
+                    'Advanced Security',
+                    'White-Label Optionen',
+                    'Onboarding Support'
+                ];
+            } else {
+                // Fallback-Features
+                features = [
+                    'Alle Grundfunktionen',
+                    'E-Mail Support',
+                    'Monatliche Updates'
+                ];
+            }
+            
+            return {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                monthlyPrice: monthlyPrice ? monthlyPrice.unit_amount / 100 : 0,
+                yearlyPrice: yearlyPrice ? yearlyPrice.unit_amount / 100 : 0,
+                yearlyDiscountPercentage,
+                monthlyPriceId: monthlyPrice?.id,
+                yearlyPriceId: yearlyPrice?.id,
+                features
+            };
+        });
+    },
+
+    /**
+     * Erstellt einen neuen Kunden in Stripe oder simuliert dies mit Mock-Daten
      * @param {string} email - E-Mail-Adresse des Kunden
      * @param {string} name - Name des Kunden
      * @returns {Promise<Object>} - Kundendaten mit user.id
@@ -80,18 +199,25 @@ const apiClient = {
 
             return await response.json();
         } catch (error) {
-            console.error('Fehler beim Erstellen des Kunden:', error);
-            throw error;
+            console.warn('Backend nicht erreichbar, simuliere Kundenerstellung:', error);
+            // Mock-Antwort für Entwicklung
+            return {
+                id: `mock_user_${Date.now()}`,
+                stripe_customer_id: `cus_mock_${Date.now()}`,
+                email: email,
+                name: name,
+                created_at: new Date().toISOString()
+            };
         }
     },
 
     /**
-     * Erstellt eine Checkout-Session für das Abonnement
+     * Erstellt eine Checkout-Session für das Abonnement oder simuliert dies mit Mock-Daten
      * @param {string} priceId - Stripe Price ID
      * @param {string} userId - User ID vom erstellten Kunden
      * @returns {Promise<Object>} - Session-Daten mit sessionUrl
      */
-    async createCheckoutSession(priceId, userId) {
+    async createCheckoutSession(priceId, userId, stripeCustomerId) {
         try {
             const response = await fetch(`${API_BASE_URL}/checkout-session`, {
                 method: 'POST',
@@ -100,7 +226,8 @@ const apiClient = {
                 },
                 body: JSON.stringify({
                     priceId: priceId,
-                    userId: userId
+                    userId: userId,
+                    customerId: stripeCustomerId || undefined
                 })
             });
 
@@ -110,127 +237,22 @@ const apiClient = {
 
             return await response.json();
         } catch (error) {
-            console.error('Fehler beim Erstellen der Checkout-Session:', error);
-            throw error;
+            // Zeige einen klaren Fehler, wenn der Checkout-Session-Request fehlschlägt
+            throw new Error('Fehler beim Starten des Bezahlvorgangs. Bitte versuchen Sie es später erneut.');
         }
     }
 };
 
-/**
- * PaymentToggle Komponente - Ermöglicht das Umschalten zwischen monatlicher und jährlicher Zahlung
- * @param {boolean} isMonthly - Aktueller Zustand (true = monatlich, false = jährlich)
- * @param {function} onToggle - Callback-Funktion beim Umschalten
- * @param {Array} plans - Verfügbare Pläne für Rabattberechnung
- */
-function PaymentToggle({ isMonthly, onToggle, plans = [] }) {
-    // Dynamischer Rabattpercentage aus den Plandaten (nimm den ersten verfügbaren)
-    const discountPercentage = plans.length > 0 ? plans[0].yearlyDiscountPercentage : 16;
 
-    return (
-        <div className="flex justify-center mb-8 px-4">
-            <div className="bg-gray-100 p-1 rounded-lg flex items-center w-full max-w-sm sm:w-auto">
-                <button
-                    onClick={() => onToggle(true)}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 rounded-md font-medium transition-all duration-200 text-sm sm:text-base min-h-[44px] ${
-                        isMonthly
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                >
-                    Monatlich
-                </button>
-                <button
-                    onClick={() => onToggle(false)}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 rounded-md font-medium transition-all duration-200 flex items-center justify-center text-sm sm:text-base min-h-[44px] ${
-                        !isMonthly
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                >
-                    <span>Jährlich</span>
-                    <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
-                        Spare {discountPercentage}%
-                    </span>
-                </button>
-            </div>
-        </div>
-    );
-}
 
-/**
- * SubscriptionCard Komponente - Zeigt einen einzelnen Abonnementplan an
- * @param {object} plan - Plandaten (id, name, prices, features)
- * @param {boolean} isMonthly - Zeigt monatlichen oder jährlichen Preis an
- * @param {boolean} isSelected - Ob dieser Plan aktuell ausgewählt ist
- * @param {function} onSelect - Callback beim Klick auf "Plan auswählen"
- */
-function SubscriptionCard({ plan, isMonthly, isSelected, onSelect }) {
-    // Berechnung des anzuzeigenden Preises basierend auf Zahlungsintervall
-    const price = isMonthly ? plan.monthlyPrice : plan.yearlyPrice;
-    const priceLabel = isMonthly ? 'Monat' : 'Jahr';
-    const savings = isMonthly ? null : plan.yearlyDiscountPercentage;
-
-    return (
-        <div className={`rounded-xl shadow-lg p-4 sm:p-6 transition-all duration-200 hover:shadow-xl h-full flex flex-col ${
-            isSelected 
-                ? 'bg-blue-50 border-2 border-blue-500 ring-2 ring-blue-200' 
-                : 'bg-white border-2 border-gray-200 hover:border-gray-300'
-        }`}>
-            {/* Header mit Plan-Name und Preis */}
-            <div className="text-center mb-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
-                    {plan.name}
-                </h3>
-                
-                <div className="mb-4">
-                    <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                        €{price.toFixed(2)}
-                    </span>
-                    <span className="text-gray-600 ml-1 text-sm sm:text-base">
-                        /{priceLabel}
-                    </span>
-                    {savings && (
-                        <div className="text-sm text-green-600 font-medium mt-2">
-                            {savings}% Ersparnis
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Feature-Liste */}
-            <ul className="space-y-3 mb-6 flex-grow">
-                {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                        {/* Häkchen-Icon */}
-                        <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                            {feature}
-                        </span>
-                    </li>
-                ))}
-            </ul>
-
-            {/* Action Button - Touch-optimiert mit min-height */}
-            <button
-                onClick={() => onSelect(plan.id)}
-                className={`w-full py-3 sm:py-4 px-4 rounded-lg font-medium transition-colors duration-200 text-sm sm:text-base min-h-[48px] ${
-                    isSelected
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
-                        : 'bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700'
-                }`}
-            >
-                {isSelected ? 'Jetzt kaufen' : 'Plan auswählen'}
-            </button>
-        </div>
-    );
-}
 
 /**
  * Haupt-App Komponente - Verwaltet den gesamten Anwendungszustand
  */
+import { useLocation } from 'react-router-dom';
+
 function App() {
+    const location = useLocation();
     // Zustandsverwaltung für die Anwendung
     const [isMonthly, setIsMonthly] = React.useState(true); // Zahlungsintervall (monatlich/jährlich)
     const [selectedPlanId, setSelectedPlanId] = React.useState(null); // ID des ausgewählten Plans
@@ -238,6 +260,9 @@ function App() {
     const [subscriptionPlans, setSubscriptionPlans] = React.useState([]); // Produktdaten vom Backend
     const [loading, setLoading] = React.useState(true); // Ladezustand für Produktdaten
     const [error, setError] = React.useState(null); // Fehlerzustand
+
+    // Get stripeCustomerId from state or query param
+    const stripeCustomerId = location.state?.stripeCustomerId || new URLSearchParams(window.location.search).get('stripeCustomerId');
 
     /**
      * Lädt Produktdaten beim ersten Rendern
@@ -294,24 +319,22 @@ function App() {
                 throw new Error('Preis-ID nicht verfügbar');
             }
 
-            // Schritt 1: Erstelle Kunden
-            // Für Demo-Zwecke verwenden wir Dummy-Daten
-            // In einer echten App würden Sie diese Daten vom User abfragen
-            const customerData = await apiClient.createCustomer(
-                'demo@example.com', // In echter App: User-Input
-                'Demo User'         // In echter App: User-Input
-            );
-
-            // Schritt 2: Erstelle Checkout-Session
+            // Schritt 1: Erstelle Checkout-Session (nutze ggf. Stripe Customer ID)
             const checkoutData = await apiClient.createCheckoutSession(
                 priceId,
-                customerData.id
+                null,
+                stripeCustomerId || undefined
             );
 
-            // Schritt 3: Weiterleitung zu Stripe Checkout
+            // Schritt 3: Weiterleitung zu Stripe Checkout oder Mock-Erfolg
             if (checkoutData.sessionUrl) {
-                // Leite zur Stripe Checkout-Seite weiter
-                window.location.href = checkoutData.sessionUrl;
+                if (checkoutData.sessionUrl === '#mock-checkout-success') {
+                    // Mock-Modus: Simuliere erfolgreiche Zahlung
+                    setPaymentStatus('success');
+                } else {
+                    // Echter Modus: Leite zur Stripe Checkout-Seite weiter
+                    window.location.href = checkoutData.sessionUrl;
+                }
             } else {
                 throw new Error('Keine Session-URL erhalten');
             }
@@ -322,6 +345,7 @@ function App() {
             throw error;
         }
     };
+
 
     /**
      * Handler für die Planauswahl und Zahlungsinitiierung
@@ -349,23 +373,28 @@ function App() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hauptcontainer mit responsiven Abständen */}
-            <div className="max-w-7xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
-                {/* Header-Bereich */}
-                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-                    {/* Logo */}
-                    <div className="mb-6 sm:mb-8">
-                        <img 
-                            src={logo} 
-                            alt="Logo" 
-                            className="mx-auto h-16 sm:h-20 lg:h-24 w-auto"
-                        />
-                    </div>
-                    
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 mb-6 sm:mb-8 leading-tight">
-                        Unsere Abonnementpläne
-                    </h1>
+    <div
+        style={{
+            backgroundImage: "url('/logo2.png')",
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center 180px',
+            backgroundSize: '400px auto',
+            minHeight: '100vh',
+            minWidth: '100vw',
+            width: '100vw',
+            height: '100vh',
+            background: 'linear-gradient(180deg, #f5faff 0%, #e6edfa 60%, #fff 100%)',
+            backgroundColor: '#fff',
+        }}
+    >
+      
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-white">
+                <div className="max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8">
+                    <div className="text-center mb-8 sm:mb-12 lg:mb-16 mt-6 sm:mt-10 lg:mt-14">
+
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight mb-6 sm:mb-8 leading-tight font-oswald uppercase text-koenigsblau">
+                            UNSERE ABONNEMENTPLÄNE
+                        </h1>                    
                     
                     {/* Zahlungsintervall-Umschalter - nur anzeigen wenn Daten geladen */}
                     {!loading && !error && (
@@ -406,7 +435,8 @@ function App() {
 
                 {/* Responsive Grid für Abonnementkarten - nur anzeigen wenn Daten vorhanden */}
                 {!loading && !error && subscriptionPlans.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8 md:gap-10 xl:gap-12">
+  {/* Cards werden auf kleinen Bildschirmen untereinander und mit mehr Abstand gestapelt */}
                         {subscriptionPlans.map((plan) => (
                             <SubscriptionCard
                                 key={plan.id}
@@ -426,6 +456,9 @@ function App() {
                     </div>
                 )}
             </div>
+
+            {/* FAQ unterhalb der Abonnementkarten */}
+            <FaqSection />
 
             {/* Payment Status Modal - Overlay für Zahlungsfeedback */}
             {paymentStatus !== 'idle' && (
@@ -493,8 +526,9 @@ function App() {
                 </div>
             )}
         </div>
-    );
+    </div>
+  );
 }
 
-// export default App;
-window.App = App; // Globale Variable für Browser
+
+export default App;

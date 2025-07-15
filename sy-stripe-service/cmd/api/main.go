@@ -97,10 +97,10 @@ func main() {
 	subService := services.NewSubscriptionService(userRepo.(database.UserRepository), subRepo.(database.SubscriptionRepository))
 	stripeService := handlers.NewStripeService()
 
-	userHandler := handlers.NewUserHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, subService)
 
-	// Customer details endpoint
-	r.GET("/api/v1/customer/:id", userHandler.GetUserByIDHandler)
+	// Customer details endpoint (returns user and subscription details)
+	r.GET("/api/v1/customers/:id/details", userHandler.GetCustomerDetailsHandler)
 
 	subscriptionHandler := handlers.NewSubscriptionHandler(subService)
 
@@ -114,15 +114,16 @@ func main() {
 	productService := services.NewProductService()
 	productHandler := handlers.NewProductHandler(productService)
 
-	checkoutHandler := handlers.NewCheckoutHandler(subService, cfg.AppSuccessURL, cfg.AppCancelURL)
+	checkoutHandler := handlers.NewCheckoutHandler(subService, userService, cfg.AppSuccessURL, cfg.AppCancelURL)
 
 	v1 := r.Group("/api/v1")
 	{
 		v1.POST("/customers/create", stripeHandlers.CreateCustomerHandler)
-		v1.GET("/customers", handlers.NewUserHandler(userService).GetAllUsersHandler)
+		v1.GET("/customers", handlers.NewUserHandler(userService, subService).GetAllUsersHandler)
 		v1.POST("/subscriptions/create", stripeHandlers.CreateSubscriptionHandler)
 		v1.GET("/products", productHandler.GetProductsHandler)
 		v1.POST("/checkout-session", checkoutHandler.CreateCheckoutSessionHandler)
+	v1.GET("/checkout-session/:id", checkoutHandler.GetCheckoutSessionHandler)
 	}
 
 	// Start HTTP server

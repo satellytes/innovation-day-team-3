@@ -48,6 +48,10 @@ func (r *InMemoryUserRepository) CreateUser(ctx context.Context, user *models.Us
 	if _, exists := r.users[user.StripeCustomerID]; exists {
 		return nil, fmt.Errorf("user already exists")
 	}
+	// Ensure name is set (should already be, but for safety)
+	if user.Name == "" {
+		user.Name = "Unbekannt"
+	}
 	r.users[user.StripeCustomerID] = user
 	return user, nil
 }
@@ -67,6 +71,25 @@ type InMemorySubscriptionRepository struct {
 	mu             sync.RWMutex
 	subscriptions  map[string]*models.Subscription // key: StripeSubscriptionID
 }
+
+// GetLatestSubscriptionByUserID returns the latest subscription (by created_at) for a user (in-memory)
+func (r *InMemorySubscriptionRepository) GetLatestSubscriptionByUserID(ctx context.Context, userID string) (*models.Subscription, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var latest *models.Subscription
+	for _, sub := range r.subscriptions {
+		if sub.UserID.String() == userID {
+			if latest == nil || sub.CreatedAt.After(latest.CreatedAt) {
+				latest = sub
+			}
+		}
+	}
+	if latest == nil {
+		return nil, fmt.Errorf("subscription not found")
+	}
+	return latest, nil
+}
+
 
 func (r *InMemorySubscriptionRepository) GetSubscriptionByID(ctx context.Context, id string) (*models.Subscription, error) {
 	r.mu.RLock()
