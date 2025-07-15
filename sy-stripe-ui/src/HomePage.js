@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from 'react';
 import logo from './logo2.png';
 
@@ -165,3 +166,7 @@ export default function HomePage() {
     </div>
   );
 }
+=======
+import App from './App';
+export default App;
+>>>>>>> Stashed changes
