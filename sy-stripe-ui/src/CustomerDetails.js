@@ -8,6 +8,13 @@ import { createCheckoutSession, cancelSubscription } from './api/subscriptions';
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export default function CustomerDetails() {
+  // Cleanup modals on unmount to prevent DOM errors
+  React.useEffect(() => {
+    return () => {
+      setShowCancelModal(false);
+      setShowSuccessModal(false);
+    };
+  }, []);
   React.useEffect(() => {
     document.title = 'Satellytes – Kundendetails';
   }, []);
@@ -19,6 +26,11 @@ export default function CustomerDetails() {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
+  const [invoicesError, setInvoicesError] = useState(null);
 
   useEffect(() => {
     async function fetchDetails() {
@@ -34,7 +46,29 @@ export default function CustomerDetails() {
         setLoading(false);
       }
     }
+    async function fetchInvoices() {
+      setInvoicesLoading(true);
+      setInvoicesError(null);
+      try {
+        if (!id && !customer?.user?.stripe_customer_id) return;
+        const customerId = customer?.user?.stripe_customer_id || localStorage.getItem('stripe_customer_id');
+        if (!customerId) return;
+        const res = await fetch(`${API_BASE_URL}/invoices/download?customerId=${encodeURIComponent(customerId)}`);
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Fehler beim Laden der Rechnungen');
+        }
+        const data = await res.json();
+        setInvoices(data.invoices || []);
+      } catch (err) {
+        setInvoicesError(err.message);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    }
     fetchDetails();
+    // Fetch invoices after details (so we have customerId)
+    setTimeout(fetchInvoices, 500); // small delay to ensure customer is loaded
   }, [id]);
 
   if (loading) return (
@@ -128,6 +162,53 @@ export default function CustomerDetails() {
                 <div className="text-gray-600 text-lg">Kein aktives Abonnement.</div>
               </div>
             )}
+            {/* Invoice List */}
+            <div className="w-full mt-8">
+              <h3 className="text-lg font-bold mb-2">Rechnungen</h3>
+              {invoicesLoading ? (
+                <div className="text-gray-500">Lade Rechnungen...</div>
+              ) : invoicesError ? (
+                <div className="text-red-600 text-sm">{invoicesError}</div>
+              ) : invoices.length === 0 ? (
+                <div className="text-gray-500">Keine Rechnungen gefunden.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white rounded shadow">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left">Datum</th>
+                        <th className="px-4 py-2 text-left">Plan</th>
+                        <th className="px-4 py-2 text-left">Betrag</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Aktion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map(inv => (
+                        <tr key={inv.id}>
+                          <td className="px-4 py-2">{inv.created ? new Date(inv.created * 1000).toLocaleDateString() : '-'}</td>
+                          <td className="px-4 py-2">{inv.plan_name || inv.plan_id || '–'}</td>
+                          <td className="px-4 py-2">{inv.amount_due ? `${(inv.amount_due / 100).toLocaleString('de-DE', { style: 'currency', currency: inv.currency ? inv.currency.toUpperCase() : 'EUR' })}` : '-'}</td>
+                          <td className="px-4 py-2 capitalize">{inv.status || '-'}</td>
+                          <td className="px-4 py-2">
+                            {inv.pdf_url ? (
+                              <button
+                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
+                                onClick={() => window.open(inv.pdf_url, '_blank')}
+                              >
+                                Download
+                              </button>
+                            ) : (
+                              <span className="text-gray-400">Nicht verfügbar</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         {/* Actions: Logout, Cancel, Change/Re-add Plan */}

@@ -32,6 +32,7 @@ func main() {
 	http.HandleFunc("/api/v1/products", getProductsHandler)
 	http.HandleFunc("/api/v1/subscriptions/create", createSubscriptionHandler)
 	http.HandleFunc("/api/v1/customers/create", createCustomerHandler)
+	http.HandleFunc("/api/v1/invoices/download", downloadInvoiceHandler)
 
 	fmt.Println("Server starting on port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
